@@ -170,6 +170,43 @@
       { t: '+50% aturdimiento',             m: { stun: 1.50 } },
       { t: '-25% recarga y +30% daño',      m: { cd: 0.75, dmg: 1.30 } }
     ],
+    // ---- apoyo (PokemonPOE, 20-10-2026): systems/support.js ----
+    heal: [
+      { t: '+40% curación',                 m: { amount: 1.40 } },
+      { t: '-25% recarga',                  m: { cd: 0.75 } },
+      { t: '+30% radio',                    m: { radius: 1.30 } },
+      { t: '+50% curación y -15% recarga',  m: { amount: 1.50, cd: 0.85 } }
+    ],
+    shield: [
+      { t: '+40% escudo',                   m: { amount: 1.40 } },
+      { t: '+50% duración',                 m: { dur: 1.50 } },
+      { t: '-25% recarga',                  m: { cd: 0.75 } },
+      { t: '+50% escudo y -15% recarga',    m: { amount: 1.50, cd: 0.85 } }
+    ],
+    guard: [
+      { t: '+30% reducción de daño',        m: { amount: 1.30 } },
+      { t: '+50% duración',                 m: { dur: 1.50 } },
+      { t: '+30% radio',                    m: { radius: 1.30 } },
+      { t: '+25% reducción y -20% recarga', m: { amount: 1.25, cd: 0.80 } }
+    ],
+    taunt: [
+      { t: '+30% radio',                    m: { radius: 1.30 } },
+      { t: '+50% duración',                 m: { dur: 1.50 } },
+      { t: '+40% reducción de daño propia', m: { guard: 1.40 } },
+      { t: '-25% recarga y +30% radio',     m: { cd: 0.75, radius: 1.30 } }
+    ],
+    protect: [
+      { t: '+40% duración',                 m: { dur: 1.40 } },
+      { t: '-25% recarga',                  m: { cd: 0.75 } },
+      { t: '+40% duración',                 m: { dur: 1.40 } },
+      { t: '-25% recarga',                  m: { cd: 0.75 } }
+    ],
+    rally: [
+      { t: '+40% potencia',                 m: { amount: 1.40 } },
+      { t: '+50% duración',                 m: { dur: 1.50 } },
+      { t: '+30% radio',                    m: { radius: 1.30 } },
+      { t: '-25% recarga y +30% potencia',  m: { cd: 0.75, amount: 1.30 } }
+    ],
     buff: [
       { t: '+1 acumulación máxima',         m: { stacks: 1 } },
       { t: '+40% potencia',                 m: { amount: 1.40 } },
@@ -594,7 +631,47 @@
       cd: 0.7, dmg: 22, speed: 330, life: 1.6, size: 7, homing: 6 },
     { id: 'night-slash', name: 'Tajo Umbrío', type: 'dark', kind: 'spin',
       desc: 'Cortes en giro que alcanzan a todo lo que te rodea.',
-      cd: 1.0, dmg: 11, count: 3, radius: 62 }
+      cd: 1.0, dmg: 11, count: 3, radius: 62 },
+
+    // ---------------- APOYO (PokemonPOE) ----------------
+    // Los puede aprender cualquier Pokémon, sea del tipo que sea: el rol (sanador, tanque...) lo eliges tú.
+    // El tipo sólo da el color de la carta; el efecto en pantalla usa el color del Pokémon que lo lanza.
+    { id: 'recover', name: 'Recuperación', type: 'normal', kind: 'heal', support: true,
+      desc: 'Te curas un buen trozo de vida de golpe. Sólo a ti.',
+      cd: 14, amount: 0.30, radius: 0 },
+    { id: 'heal-pulse', name: 'Pulso Cura', type: 'psychic', kind: 'heal', support: true,
+      desc: 'Una onda que cura a ti y a los compañeros que tengas cerca.',
+      cd: 9, amount: 0.18, radius: 150 },
+    { id: 'life-dew', name: 'Gota Cura', type: 'water', kind: 'heal', support: true,
+      desc: 'Un rocío que cura poco pero muy a menudo a los de alrededor.',
+      cd: 5, amount: 0.09, radius: 120 },
+    { id: 'heal-bell', name: 'Campana Cura', type: 'normal', kind: 'heal', support: true, cure: true,
+      desc: 'Una campana que cura a tu equipo y quita la lentitud.',
+      cd: 11, amount: 0.10, radius: 200 },
+    { id: 'protect', name: 'Protección', type: 'normal', kind: 'protect', support: true,
+      desc: 'Te vuelves invulnerable un instante. Sólo con enemigos cerca.',
+      cd: 12, dur: 1.0 },
+    { id: 'reflect', name: 'Reflejo', type: 'psychic', kind: 'guard', support: true, gcat: 'physical',
+      desc: 'Un muro que baja el daño FÍSICO que reciben tú y tus compañeros cercanos.',
+      cd: 10, amount: 0.30, dur: 6, radius: 220 },
+    { id: 'light-screen', name: 'Pantalla de Luz', type: 'psychic', kind: 'guard', support: true, gcat: 'special',
+      desc: 'Un muro que baja el daño ESPECIAL que reciben tú y tus compañeros cercanos.',
+      cd: 10, amount: 0.30, dur: 6, radius: 220 },
+    { id: 'aurora-veil', name: 'Velo Aurora', type: 'ice', kind: 'guard', support: true, gcat: 'both',
+      desc: 'Un velo que baja un poco todo el daño que recibe el equipo cercano.',
+      cd: 11, amount: 0.22, dur: 5, radius: 160 },
+    { id: 'iron-defense', name: 'Defensa Férrea', type: 'steel', kind: 'shield', support: true,
+      desc: 'Un escudo que absorbe daño. Sólo para ti.',
+      cd: 10, amount: 0.25, dur: 8, radius: 0 },
+    { id: 'taunt', name: 'Mofa', type: 'dark', kind: 'taunt', support: true,
+      desc: 'Los enemigos cercanos van a por ti y tú recibes menos daño mientras dura.',
+      cd: 8, radius: 220, dur: 3.5, guard: 0.15 },
+    { id: 'follow-me', name: 'Señuelo', type: 'normal', kind: 'taunt', support: true,
+      desc: 'Atraes a los enemigos de una zona enorme durante bastante rato (y resistes más).',
+      cd: 12, radius: 340, dur: 5, guard: 0.25 },
+    { id: 'tailwind', name: 'Viento Afín', type: 'flying', kind: 'rally', support: true,
+      desc: 'Un viento a favor: sube la velocidad de todo el equipo cercano un rato.',
+      cd: 14, amount: 0.25, dur: 6, radius: 450 }
   ];
 
   // Cuerpo a cuerpo (12-10-2026): +20 % de daño y +25 % de alcance y de arco
@@ -609,7 +686,9 @@
 
   // Pool de movimientos por tipo. El pool `normal` lo tienen todos.
   const POOL = {};
-  for (const m of RAW) (POOL[m.type] = POOL[m.type] || []).push(m.id);
+  // (El apoyo no va en la lista de su tipo: lo puede aprender cualquiera, ver SUPPORT.)
+  for (const m of RAW) if (!m.support) (POOL[m.type] = POOL[m.type] || []).push(m.id);
+  const SUPPORT = RAW.filter(m => m.support).map(m => m.id);
 
   /*
    * Físico o especial (G.Stats), como en los juegos. Los de estado que aquí sí
@@ -627,7 +706,7 @@
 
   const BY_ID = {};
   for (const m of RAW) {
-    m.cat = m.kind === 'buff' ? null : PHYSICAL.has(m.id) ? 'physical' : 'special';
+    m.cat = (m.kind === 'buff' || m.support) ? null : PHYSICAL.has(m.id) ? 'physical' : 'special';
     m.ups = LADDERS[m.kind];
     m.maxLvl = m.ups.length + 1;
     BY_ID[m.id] = m;
@@ -653,7 +732,7 @@
   }
 
   const MULT = ['dmg', 'cd', 'speed', 'radius', 'dur', 'amount', 'arc', 'width', 'spread', 'life', 'size', 'rate',
-                'pull', 'knock', 'stun', 'charge'];
+                'pull', 'knock', 'stun', 'charge', 'guard'];
   const ADD = ['count', 'pierce', 'stacks', 'bounce'];
 
   function applyMods(s, m) {
@@ -797,6 +876,6 @@
     return true;
   }
 
-  G.Moves = { ALL: RAW, BY_ID, POOL, poolFor, instance, levelUp, nextUpText, startFor,
+  G.Moves = { ALL: RAW, BY_ID, POOL, SUPPORT, poolFor, instance, levelUp, nextUpText, startFor,
               EVO, NEED_NAME, evoInfo, evolve };
 })();

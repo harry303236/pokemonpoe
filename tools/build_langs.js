@@ -10,7 +10,7 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const SOURCES = ['lang-fr.js', 'lang-it.js', 'lang-pt.js', 'lang-zh-cn.js', 'lang-zh-cn-names.js',
-                 'lang-zh-hant.js', 'lang-zh-hant-names.js', 'lang-updates.js'].map(f => 'js/data/' + f);
+                 'lang-zh-hant.js', 'lang-zh-hant-names.js', 'lang-support.js', 'lang-updates.js'].map(f => 'js/data/' + f);
 const LANGS = ['fr', 'it', 'pt-BR', 'zh-Hans', 'zh-Hant'];
 
 /** Ejecuta archivos con un G.I18n.add que sólo apunta: → [[dict, idioma, contexto], ...] */

@@ -74,6 +74,10 @@ G.Player = class Player {
     this.dead = false;
     this.power = null;         // poder de altar activo: { def, t, dur }
     this.slowT = 0;            // pegado por una trampa
+    // Apoyo (systems/support.js)
+    this.shield = 0; this.shieldT = 0;                         // escudo que absorbe daño
+    this.guard = { physical: [0, 0], special: [0, 0] };        // [reducción, segundos] de Reflejo / Pantalla de Luz / Velo Aurora
+    this.tauntUntil = 0; this.tauntR = 0;                      // Mofa / Señuelo: hasta cuándo y hasta dónde atraes
     this.item = null;          // objeto equipado (data/items.js), uno por run
     this.sashT = -999;         // última vez que salvó la Banda Focus
     this.bellHeal = 0;         // curación pendiente del Cascabel Concha
@@ -342,9 +346,11 @@ G.Player = class Player {
     }
     const anim = { melee: 'Attack', beam: 'Shoot', projectile: 'Shoot', nova: 'Attack',
                    aura: 'Charge', buff: 'Charge', orbit: 'Charge', boomerang: 'Shoot', chain: 'Shoot',
-                   mine: 'Charge', meteor: 'Charge', turret: 'Charge', dash: 'Attack', trail: 'Walk', cone: 'Shoot' }[m.kind] || 'Attack';
+                   mine: 'Charge', meteor: 'Charge', turret: 'Charge', dash: 'Attack', trail: 'Walk', cone: 'Shoot',
+                   heal: 'Charge', shield: 'Charge', guard: 'Charge', taunt: 'Attack', protect: 'Charge', rally: 'Charge' }[m.kind] || 'Attack';
     // Las familias nuevas suenan como la parecida de las de siempre.
-    const SND = { boomerang: 'projectile', chain: 'beam', mine: 'nova', meteor: 'nova', turret: 'buff', dash: 'melee', trail: 'aura', cone: 'projectile' };
+    const SND = { boomerang: 'projectile', chain: 'beam', mine: 'nova', meteor: 'nova', turret: 'buff', dash: 'melee', trail: 'aura', cone: 'projectile',
+                  heal: 'aura', shield: 'buff', guard: 'aura', taunt: 'nova', protect: 'buff', rally: 'buff' };
     // El rastro no suena a cada charco (sería un zumbido constante).
     if (m.kind !== 'trail') G.Audio.sfx('shot', { kind: SND[m.kind] || m.kind, type: m.type });
     if (m.kind === 'trail') return;
@@ -377,7 +383,14 @@ G.Player = class Player {
     // Con un ataque cuerpo a cuerpo activo se recibe un 25 % menos: hay que
     // estar encima de los enemigos para pegar (iban muy por detrás).
     const close = this.activeGroup().some(m => m.kind === 'melee') ? 0.75 : 1;
-    const d = pure ? Math.max(1, amount) : Math.max(1, amount * (1 - this.reduction) * close);
+    let d = pure ? Math.max(1, amount) : Math.max(1, amount * (1 - this.reduction) * close * (1 - G.Support.guardOf(this, cat)));
+    // Escudo: se come el daño antes que la vida.
+    if (this.shield > 0) {
+      const a = Math.min(this.shield, d);
+      this.shield -= a; d -= a;
+      G.FX.dmgText(this.x, this.y - this.bodyH - 4, '-' + Math.round(a), '#9fd8ff');
+      if (d < 1) { this.invuln = 0.3; this.flash = 0.1; G.Audio.sfx('hurt'); return; }
+    }
     this.hp -= d;
     this.invuln = 0.45;
     this.flash = 0.14;
@@ -469,6 +482,7 @@ G.Player = class Player {
       if (b.n > 0) { b.t -= dt; if (b.t <= 0) b.n = 0; }
     }
     if (this.slowT > 0) this.slowT -= dt;
+    G.Support.tick(this, dt);
     if (this.bellHeal > 0) { const h = Math.min(this.bellHeal, 4 * dt); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
     if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
     if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);

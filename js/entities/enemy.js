@@ -921,6 +921,8 @@
 
     /** El jugador vivo más cercano (los caídos no atraen a nadie). */
     function nearestPlayer(players, x, y) {
+      const tn = G.Support.taunter(players, x, y);        // Mofa / Señuelo: mandan sobre la distancia
+      if (tn) return tn;
       let best = null, bd = Infinity;
       for (const p of players) {
         if (p.dead) continue;

@@ -777,3 +777,28 @@ G.I18n.add({
   'Aún no tienes marca.': 'You do not have a record yet.',
   'Folagor, Sekiam, PokeAlex: ¿un hueco?': 'Folagor, Sekiam, PokeAlex: room for one more?'
 });
+
+// ---------------- PokemonPOE: movimientos de apoyo ----------------
+G.I18n.add({
+  'Recuperación': 'Recover', 'Pulso Cura': 'Heal Pulse', 'Gota Cura': 'Life Dew', 'Campana Cura': 'Heal Bell',
+  'Protección': 'Protect', 'Reflejo': 'Reflect', 'Pantalla de Luz': 'Light Screen', 'Velo Aurora': 'Aurora Veil',
+  'Defensa Férrea': 'Iron Defense', 'Mofa': 'Taunt', 'Señuelo': 'Follow Me', 'Viento Afín': 'Tailwind',
+  'Apoyo': 'Support',
+  'Te curas un buen trozo de vida de golpe. Sólo a ti.': 'Heal a big chunk of HP at once. Self only.',
+  'Una onda que cura a ti y a los compañeros que tengas cerca.': 'A wave that heals you and nearby teammates.',
+  'Un rocío que cura poco pero muy a menudo a los de alrededor.': 'A dew that heals a little, but very often, those around you.',
+  'Una campana que cura a tu equipo y quita la lentitud.': 'A bell that heals your team and removes slowness.',
+  'Te vuelves invulnerable un instante. Sólo con enemigos cerca.': 'Briefly invulnerable. Only fires with enemies nearby.',
+  'Un muro que baja el daño FÍSICO que reciben tú y tus compañeros cercanos.': 'A wall that lowers PHYSICAL damage taken by you and nearby teammates.',
+  'Un muro que baja el daño ESPECIAL que reciben tú y tus compañeros cercanos.': 'A wall that lowers SPECIAL damage taken by you and nearby teammates.',
+  'Un velo que baja un poco todo el daño que recibe el equipo cercano.': 'A veil that slightly lowers all damage taken by the nearby team.',
+  'Un escudo que absorbe daño. Sólo para ti.': 'A shield that absorbs damage. Self only.',
+  'Los enemigos cercanos van a por ti y tú recibes menos daño mientras dura.': 'Nearby enemies go for you, and you take less damage while it lasts.',
+  'Atraes a los enemigos de una zona enorme durante bastante rato (y resistes más).': 'Draws enemies from a huge area for quite a while (and you resist more).',
+  'Un viento a favor: sube la velocidad de todo el equipo cercano un rato.': 'A tailwind: raises the speed of the whole nearby team for a while.',
+  '+40% curación': '+40% healing', '+50% curación y -15% recarga': '+50% healing and -15% cooldown',
+  '+40% escudo': '+40% shield', '+50% escudo y -15% recarga': '+50% shield and -15% cooldown',
+  '+30% reducción de daño': '+30% damage reduction', '+25% reducción y -20% recarga': '+25% reduction and -20% cooldown',
+  '+40% reducción de daño propia': '+40% own damage reduction', '-25% recarga y +30% radio': '-25% cooldown and +30% radius',
+  '+40% potencia': '+40% power', '-25% recarga y +30% potencia': '-25% cooldown and +30% power'
+});

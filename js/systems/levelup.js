@@ -52,16 +52,19 @@ G.LevelUp = (() => {
         const f = G.Stats.fit(mon, cat);
         return f < 0.95 ? ` <span class="fit-low">Con ${mon.name} rinde un ${Math.round(f * 100)} %: pega mejor con ataques ${G.Stats.sideOf(mon) === 'special' ? 'especiales' : 'físicos'}.</span>` : '';
       };
-      const pool = G.Moves.poolFor(pl.mon).filter(id =>
+      // PokemonPOE: el apoyo (curar, proteger, provocar) lo puede aprender cualquiera. Máx. 2 a la vez
+      // para no quedarte sin ataques.
+      const sup = pl.moves.filter(m => m.support).length;
+      const pool = G.Moves.poolFor(pl.mon).concat(sup >= 2 ? [] : G.Moves.SUPPORT).filter(id =>
         !pl.hasMove(id) && !(pl.banned && pl.banned.has(id)) && !(buffs >= 2 && G.Moves.BY_ID[id].kind === 'buff'));
       // Los de su lado bueno (y los empatados y mejoras) salen el doble.
-      const weight = id => { const d = G.Moves.BY_ID[id]; return G.Stats.fit(pl.mon, d.cat) >= 0.999 ? 2 : 1; };
+      const weight = id => { const d = G.Moves.BY_ID[id]; return d.support ? 0.6 : G.Stats.fit(pl.mon, d.cat) >= 0.999 ? 2 : 1; };
       for (const id of pickWeighted(pool, 6, weight)) {
         const d = G.Moves.BY_ID[id];
         out.push({
           w: 10, type: 'new', key: 'new:' + id,
           icon: 'move:' + id, color: G.U.TYPE_COLOR[d.type],
-          tag: G.U.TYPE_NAME[d.type] + (d.cat ? ' · ' + G.Stats.NAME[d.cat] : ''),
+          tag: d.support ? 'Apoyo' : G.U.TYPE_NAME[d.type] + (d.cat ? ' · ' + G.Stats.NAME[d.cat] : ''),
           title: G.T(d.name, 'move'), desc: d.desc + fitNote(pl.mon, d.cat),
           apply: () => G.Game.learn(id)
         });

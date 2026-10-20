@@ -6,6 +6,16 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-20', title: ['PokemonPOE: apoyo, evolución, habilidades y cooperativo por códigos', 'PokemonPOE: support, evolution, abilities and code-based co-op'], new: [
+    ['12 movimientos de apoyo que puede aprender cualquier Pokémon: curar (Recuperación, Pulso Cura, Gota Cura, Campana Cura), proteger (Protección, Reflejo, Pantalla de Luz, Velo Aurora, Defensa Férrea), provocar (Mofa, Señuelo) y Viento Afín. El rol (sanador, tanque...) lo decide lo que lleves, no el tipo.',
+     '12 support moves any Pokémon can learn: healing (Recover, Heal Pulse, Life Dew, Heal Bell), protection (Protect, Reflect, Light Screen, Aurora Veil, Iron Defense), taunting (Taunt, Follow Me) and Tailwind. Your role (healer, tank...) comes from what you carry, not your type.'],
+    ['Cooperativo sin cuentas: invita a tus amigos con códigos de conexión (Menú > Con amigos), hasta 4 jugadores.',
+     'Account-free co-op: invite friends with connection codes (Menu > Play with friends), up to 4 players.'],
+    ['Evolución durante la partida (Nv.8 y Nv.15) y una habilidad por Pokémon (Nv.10 si no evoluciona, o al llegar a la forma final).',
+     'In-run evolution (Lv.8 and Lv.15) and one ability per Pokémon (Lv.10 if it does not evolve, or on reaching its final form).'],
+    ['Tab abre la pantalla de ranuras: arrastra y combina tus movimientos; cada ataque principal gana una ranura en Nv.5, 10, 15 y 20.',
+     'Tab opens the socket screen: drag and combine your moves; each main move gains a socket at Lv.5, 10, 15 and 20.']
+  ] },
   { d: '2026-10-19', title: ['38 ataques nuevos', '38 new moves'], new: [
     ['38 ataques nuevos: ahora todos los tipos tienen 5 o más (Roca, Lucha, Dragón y Hada tenían sólo 2). Entre ellos Hiperrayo, Rayo Solar, Magnitud, Torbellino, Onda Trueno, Enfado, Carantoña, Golpe Bajo... cada uno con su evolución.',
      '38 new moves: every type now has 5 or more (Rock, Fighting, Dragon and Fairy had only 2). Among them Hyper Beam, Solar Beam, Magnitude, Whirlpool, Thunder Wave, Outrage, Play Rough, Sucker Punch... each with its evolution.'],
