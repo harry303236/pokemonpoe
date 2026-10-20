@@ -269,6 +269,9 @@ G.MenuUI = (() => {
 
   // Variante que se está viendo en la ficha (normal o shiny).
   let viewShiny = false;
+  // Filtro de la lista de movimientos de la ficha ('' = todos) y el que está explicado.
+  let poolFilter = '';
+  let poolPick = '';
 
   function showDetail(dex) {
     const s = G.DB.save;
@@ -308,8 +311,7 @@ G.MenuUI = (() => {
         <p class="sub center" style="margin:6px 0 0">Pega mejor con ataques <b class="gold">${G.Stats.sideOf(p) === 'special' ? 'especiales' : 'físicos'}</b></p>
         ${p.types.length === 1 ? `<p class="sub center" style="margin:2px 0 0">Monotipo: +20 % de daño con sus ataques de tipo ${G.U.TYPE_NAME[p.types[0]]}</p>` : ''}
         <p style="font-size:14px;margin:10px 0 4px">Empieza con <b class="gold">${G.T(G.Moves.BY_ID[G.startMoveOf(dex)].name, 'move')}</b></p>
-        <p class="move-icons" title="Movimientos que puede aprender">
-          ${G.Moves.poolFor(p).map(id => `<span title="${G.T(G.Moves.BY_ID[id].name, 'move')}">${G.Icons.html('move:' + id, 16)}</span>`).join('')}</p>
+        ${poolBlock(p)}
         ${usingThis
           ? '<button class="btn grow" disabled style="width:100%">Es tu compañero</button>'
           : G.Evolution.stageOf(dex) > 1
@@ -326,6 +328,12 @@ G.MenuUI = (() => {
     });
     const fav = $('dex-fav');
     if (fav) fav.onclick = () => { G.DB.setFav(dex, !G.DB.isFav(dex)); renderGrid(true); showDetail(dex); };
+    box.querySelectorAll('[data-pool]').forEach(b => {
+      b.onclick = () => { poolFilter = b.dataset.pool; showDetail(dex); };
+    });
+    box.querySelectorAll('[data-move]').forEach(b => {
+      b.onclick = () => { poolPick = poolPick === b.dataset.move ? '' : b.dataset.move; showDetail(dex); };
+    });
     const pick = $('dex-pick');
     if (pick) pick.onclick = () => {
       s.partner = dex;
@@ -334,6 +342,30 @@ G.MenuUI = (() => {
       G.UI.toast(p.name + (s.partnerShiny ? ' shiny' : '') + ' es ahora tu compañero');
       renderGrid(true); showDetail(dex);
     };
+  }
+
+  /** Lista del pool de un Pokémon desbloqueado, partida por etiqueta (daño, curar, provocar...). */
+  function poolBlock(p) {
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const ids = G.Moves.learnSet(p);
+    const groups = G.Moves.ROLES.map(r => ({ role: r, ids: ids.filter(id => G.Moves.roleOf(id) === r.id) })).filter(g => g.ids.length);
+    const on = poolFilter && groups.some(g => g.role.id === poolFilter) ? poolFilter : '';
+    const shown = on ? groups.filter(g => g.role.id === on) : groups;
+    const picked = G.Moves.BY_ID[poolPick];
+    const chips = `<button type="button" class="chip${on ? '' : ' on'}" data-pool="">Todos</button>` +
+      groups.map(g => `<button type="button" class="chip${on === g.role.id ? ' on' : ''}" data-pool="${g.role.id}" style="--c:${g.role.color}">${g.role.name}</button>`).join('');
+    const body = shown.map(g => `<div class="pool-h"><span class="pool-tag" style="background:${g.role.color}">${g.role.name}</span><small>${g.ids.length}</small></div>` +
+      g.ids.map(id => {
+        const d = G.Moves.BY_ID[id];
+        return `<button type="button" class="pool-mv${poolPick === id ? ' on' : ''}" data-move="${id}">${G.Icons.html('move:' + id, 16)}<span>${esc(G.T(d.name, 'move'))}</span></button>`;
+      }).join('')).join('');
+    const desc = picked ? esc(G.T(picked.desc)) : 'Toca un movimiento para leer qué hace. El apoyo sólo sale si este Pokémon puede aprenderlo.';
+    return `<div class="pool">
+      <p class="sub" style="margin:8px 0 4px">Movimientos que puede aprender</p>
+      <div class="pool-tags">${chips}</div>
+      <div class="pool-list">${body}</div>
+      <p class="pool-desc">${desc}</p>
+    </div>`;
   }
 
   // ---------------- mejoras ----------------
@@ -409,16 +441,21 @@ G.MenuUI = (() => {
   function bindPanel() {
     const s = G.DB.save;
     s.pbind = s.pbind || {};
-    const list = s.pbind[upgDex] || [null, null, null, null];
     const mon = G.DEX_BY[upgDex];
-    const ids = G.Moves.poolFor(mon).concat([G.startMoveOf(upgDex)]).filter((v, i, a) => a.indexOf(v) === i)
+    const all = G.Moves.learnSet(mon);
+    let list = (s.pbind[upgDex] || [null, null, null, null]).slice(0, 4);
+    while (list.length < 4) list.push(null);
+    let dirty = false;
+    for (let i = 0; i < 4; i++) if (list[i] && !G.Moves.fitsColumn(list[i], i)) { list[i] = null; dirty = true; }
+    if (dirty) { s.pbind[upgDex] = list; G.DB.commit(); }
+    const opts = i => all.filter(id => G.Moves.fitsColumn(id, i))
       .sort((a, b) => G.Moves.BY_ID[a].name.localeCompare(G.Moves.BY_ID[b].name, 'es'));
     const el = document.createElement('div');
     el.className = 'panel bind-panel';
     el.innerHTML = `<b>Atajos de movimientos</b>
-      <p class="sub" style="margin:2px 0 8px">Elige qué movimiento va siempre en cada hueco (teclas 1-4 o los iconos de abajo), para la memoria muscular. Si aún no tienes tantos movimientos, va al hueco más cercano.</p>
+      <p class="sub" style="margin:2px 0 8px">Elige qué movimiento va siempre en cada tecla (1-4), para la memoria muscular. Las teclas 1 y 2 son de ataque (también mejoras de ataque, clima y velocidad). Las teclas 3 y 4 son de oficio (curar, proteger, provocar). Una cura sólo puede ser el movimiento principal de la 3 o de la 4.</p>
       <div class="bind-slots">${[0, 1, 2, 3].map(i => `<label class="bind-slot"><span>${i + 1}</span>
-        <select class="field" data-slot="${i}"><option value="">Libre</option>${ids.map(id =>
+        <select class="field" data-slot="${i}"><option value="">Libre</option>${opts(i).map(id =>
           `<option value="${id}" ${list[i] === id ? 'selected' : ''}>${G.T(G.Moves.BY_ID[id].name, 'move')}</option>`).join('')}</select></label>`).join('')}</div>`;
     el.querySelectorAll('select[data-slot]').forEach(sel => {
       sel.onchange = () => {

@@ -44,19 +44,22 @@ G.LevelUp = (() => {
 
     // --- movimientos nuevos ---
     if (pl.canLearn()) {
-      // Con 2 potenciadores ya no se ofrecen más: los buff no hacen daño y
-      // llenar los 4 huecos con ellos deja la run sin salida.
-      const buffs = pl.moves.filter(m => m.kind === 'buff').length;
+      // Danza Espada, Maquinación, Danza Dragón y Agilidad: como mucho 2.
+      // Fortaleza y Acua Aro no cuentan (van en las teclas de oficio).
+      const buffs = pl.moves.filter(m => G.Moves.isFrontBuff(m)).length;
       // Si es de su lado flojo, cuánto rinde (Machamp con Bola Sombra...).
       const fitNote = (mon, cat) => {
         const f = G.Stats.fit(mon, cat);
         return f < 0.95 ? ` <span class="fit-low">Con ${mon.name} rinde un ${Math.round(f * 100)} %: pega mejor con ataques ${G.Stats.sideOf(mon) === 'special' ? 'especiales' : 'físicos'}.</span>` : '';
       };
-      // PokemonPOE: el apoyo (curar, proteger, provocar) lo puede aprender cualquiera. Máx. 2 a la vez
-      // para no quedarte sin ataques.
-      const sup = pl.moves.filter(m => m.support).length;
-      const pool = G.Moves.poolFor(pl.mon).concat(sup >= 2 ? [] : G.Moves.SUPPORT).filter(id =>
-        !pl.hasMove(id) && !(pl.banned && pl.banned.has(id)) && !(buffs >= 2 && G.Moves.BY_ID[id].kind === 'buff'));
+      // Sólo se ofrece si hay una tecla o ranura legal para él. Una cura no
+      // puede ir con un ataque, ni haber dos. El apoyo de las teclas 3 y 4
+      // no tiene tope de 2: lo limita el sitio.
+      const pool = G.Moves.learnSet(pl.mon).filter(id => {
+        const d = G.Moves.BY_ID[id];
+        return !pl.hasMove(id) && !(pl.banned && pl.banned.has(id))
+          && !(buffs >= 2 && G.Moves.isFrontBuff(d)) && !!pl.placeHome(id);
+      });
       // Los de su lado bueno (y los empatados y mejoras) salen el doble.
       const weight = id => { const d = G.Moves.BY_ID[id]; return d.support ? (G.DEV_SUPPORT ? 8 : 0.6) : G.Stats.fit(pl.mon, d.cat) >= 0.999 ? 2 : 1; };
       for (const id of pickWeighted(pool, 6, weight)) {
@@ -64,7 +67,7 @@ G.LevelUp = (() => {
         out.push({
           w: 10, type: 'new', key: 'new:' + id,
           icon: 'move:' + id, color: G.U.TYPE_COLOR[d.type],
-          tag: d.support ? 'Apoyo' : G.U.TYPE_NAME[d.type] + (d.cat ? ' · ' + G.Stats.NAME[d.cat] : ''),
+          tag: d.support ? 'Apoyo · ' + G.Moves.roleName(d) : G.U.TYPE_NAME[d.type] + (d.cat ? ' · ' + G.Stats.NAME[d.cat] : ''),
           title: G.T(d.name, 'move'), desc: d.desc + fitNote(pl.mon, d.cat),
           apply: () => G.Game.learn(id)
         });

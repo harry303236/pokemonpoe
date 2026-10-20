@@ -253,7 +253,7 @@ G.RunUI = (() => {
            <div class="txt"><div class="nm">${G.T('Hueco nuevo')}</div><div class="ds">${G.T('Se usa por sí solo y lo eliges con 1-4.')}</div></div>
            <div class="key">${i + 1}</div>`
         : `<div class="ico" style="background:${G.U.TYPE_COLOR[main.type]}33">${G.Icons.html('move:' + main.id, 32)}</div>
-           <div class="txt"><div class="nm">${G.T('Ranura de')} ${G.T(main.name, 'move')} <span class="tag-chip" style="background:${G.U.TYPE_COLOR[main.type]}">${o.group.length - 1}/${G.Game.player.socketCap()}</span></div>
+           <div class="txt"><div class="nm">${G.T('Ranura de')} ${G.T(main.name, 'move')} <span class="tag-chip" style="background:${G.U.TYPE_COLOR[main.type]}">${o.group.length - 1}/${G.Game.player.socketCap(o.group)}</span></div>
            <div class="ds">${G.T('Se lanzará a la vez que')} ${G.T(main.name, 'move')} ${G.T('y no ocupa hueco.')}</div></div>
            <div class="key">${i + 1}</div>`;
       el.dataset.sfx = 'none';

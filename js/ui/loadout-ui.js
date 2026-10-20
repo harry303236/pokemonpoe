@@ -1,21 +1,32 @@
 /* ============ loadout-ui.js — pantalla de Tab: configurar movimientos y ranuras ============
- * PokemonPOE. 4 movimientos principales; cada uno gana una ranura cada 5 niveles
- * (Nv.5/10/15/20 → hasta 4). Arrastra un movimiento sobre otro para cambiarlos de
- * sitio, sobre una ranura libre para insertarlo, o sobre un hueco principal vacío
- * para sacarlo. También vale tocar uno y luego tocar el destino (móvil). */
+ * PokemonPOE. 4 teclas. La 1 tiene 4 ranuras, la 2 tiene 3 y la 3 y la 4 tienen 2,
+ * abiertas entre el Nv.5 y el 20. La 1 y la 2 son de ataque; la 3 y la 4, de oficio.
+ * Arrastra sobre otro para cambiarlos, sobre una ranura libre para insertarlo, o
+ * sobre una tecla vacía para mover el grupo. También vale tocar y luego tocar el destino. */
 G.LoadoutUI = (() => {
   const $ = id => document.getElementById(id);
 
   const TXT = {
     'zh-Hant': {
       open: '配置技能（Tab）', title: '技能配置', close: '關閉（Tab）',
-      hint: '拖曳技能到其他技能＝交換位置；拖到空插槽＝鑲嵌；把插槽裡的技能拖到「空主招位」＝取下。也可以先點選再點目標。Tab / Esc 關閉。',
-      main: '主招式', socket: '輔助插槽', using: '使用中', sockets: '輔助插槽已開', locked: lv => `Lv.${lv} 解鎖`, emptyMain: '空主招位', emptySock: '空插槽', lv: 'Lv.'
+      hint: '第 1、2 鍵是輸出（傷害、加攻、強化天氣、速度），插槽上限 4 和 3。第 3、4 鍵是職能（治療、防守、挑釁、控場），各 2 孔。整套只能有一個治療，而且只能當第 3 或第 4 鍵的主招，不能鑲在攻擊上。只有亮起來的格子放得進去。Tab / Esc 關閉。',
+      atk: '輸出', job: '職能', hole: '孔',
+      main: '主招式', socket: '輔助插槽', using: '使用中', sockets: '已開', locked: lv => `Lv.${lv} 解鎖`,
+      emptyMain: '空主招位', emptySock: '空插槽', needMain: '先放主招', lv: 'Lv.'
+    },
+    es: {
+      open: 'Editar ranuras (Tab)', title: 'Ranuras', close: 'Cerrar (Tab)',
+      hint: 'Las teclas 1 y 2 son de ataque (daño, mejoras de ataque, clima y velocidad), con 4 y 3 ranuras. Las teclas 3 y 4 son de oficio (curar, proteger, provocar), con 2. Sólo una cura en total, y sólo como movimiento principal de la 3 o la 4: no se enlaza con un ataque. Sólo se suelta donde se ilumina. Tab / Esc cierra.',
+      atk: 'Ataque', job: 'Oficio', hole: '',
+      main: 'Principal', socket: 'Ranuras', using: 'En uso', sockets: 'Abiertas', locked: lv => `Nv.${lv}`,
+      emptyMain: 'Tecla vacía', emptySock: 'Ranura vacía', needMain: 'Falta el principal', lv: 'Nv.'
     },
     en: {
       open: 'Edit loadout (Tab)', title: 'Loadout', close: 'Close (Tab)',
-      hint: 'Drag a move onto another to swap, onto an empty socket to socket it, or from a socket onto an empty main slot to take it out. You can also tap one, then tap the target. Tab / Esc closes.',
-      main: 'Main move', socket: 'Support sockets', using: 'In use', sockets: 'Sockets unlocked', locked: lv => `Unlocks at Lv.${lv}`, emptyMain: 'Empty main slot', emptySock: 'Empty socket', lv: 'Lv.'
+      hint: 'Keys 1 and 2 are attacks (damage, attack buffs, boosting weather and speed), with 4 and 3 sockets. Keys 3 and 4 are roles (heal, protect, taunt, control), 2 sockets each. Only one heal in the whole build, and only as the main move of key 3 or 4 — never linked to an attack. Only highlighted cells accept a drop. Tab / Esc closes.',
+      atk: 'Attack', job: 'Role', hole: '',
+      main: 'Main move', socket: 'Sockets', using: 'In use', sockets: 'Open', locked: lv => `Unlocks at Lv.${lv}`,
+      emptyMain: 'Empty key', emptySock: 'Empty socket', needMain: 'Needs a main', lv: 'Lv.'
     }
   };
   const lang = () => (window.PS_LOCALES && window.PS_LOCALES.lang) || 'en';
@@ -51,35 +62,31 @@ G.LoadoutUI = (() => {
       <div class="lo-txt"><div class="lo-nm">${nm}</div><div class="lo-meta"><span class="lo-chip">${type}</span><span class="lo-lv">${t('lv')}${m.lvl}</span></div></div></div>`;
   }
 
-  /** Los 4 escalones de ranura: Lv.5 / 10 / 15 / 20, encendidos según tu nivel. */
-  function pips(p) {
-    let h = '';
-    for (let k = 1; k <= G.Player.SOCKET_MAX; k++) {
-      const lv = k * G.Player.SOCKET_EVERY;
-      h += `<span class="lo-pip${p.level >= lv ? ' on' : ''}">Lv.${lv}</span>`;
-    }
-    return h;
-  }
-
   function render() {
     const p = pl();
     if (!p) return;
-    const cap = p.socketCap(), MAX = G.Player.SOCKET_MAX;
+    const open = [0, 1, 2, 3].map(i => p.socketCap(i)).join('·');
+    const maxs = [0, 1, 2, 3].map(i => p.socketMax(i)).join('·');
     $('lo-title').textContent = t('title');
-    $('lo-info').innerHTML = `<span class="lo-lvbadge">Lv.${p.level}</span> ${t('sockets')} <b>${cap}/${MAX}</b> <span class="lo-pips">${pips(p)}</span>`;
+    $('lo-info').innerHTML = `<span class="lo-lvbadge">Lv.${p.level}</span> ${t('sockets')} <b>${open}／${maxs}</b>`;
     $('lo-hint').textContent = t('hint');
     $('lo-close').textContent = t('close');
     let h = '';
     for (let gi = 0; gi < p.maxMoves; gi++) {
-      const g = p.slots[gi], act = g && gi === p.active;
-      h += `<div class="lo-col${act ? ' active' : ''}${g ? '' : ' none'}">
-        <div class="lo-head"><span class="lo-key">${gi + 1}</span><span class="lo-tag">${t('main')}</span>${act ? `<span class="lo-using">${t('using')}</span>` : ''}</div>`;
-      h += g ? moveCell(g[0], 'main') : `<div class="lo-cell empty main" data-new="1"><span class="lo-plus">＋</span><span>${t('emptyMain')}</span></div>`;
-      h += `<div class="lo-socks"><div class="lo-sock-label">${t('socket')}</div>`;
-      for (let k = 1; k <= MAX; k++) {
-        if (!g || k > cap) {
-          h += `<div class="lo-cell locked"><span>🔒</span><small>${t('locked')(k * G.Player.SOCKET_EVERY)}</small></div>`;
-        } else if (g[k]) h += moveCell(g[k], 'sock');
+      const g = p.slots[gi], act = g && gi === p.active, job = gi >= 2;
+      const plan = G.Player.SOCKET_PLAN[gi] || [];
+      const role = t(job ? 'job' : 'atk');
+      h += `<div class="lo-col${job ? ' job' : ''}${act ? ' active' : ''}${g ? '' : ' none'}">
+        <div class="lo-head"><span class="lo-key">${gi + 1}</span><span class="lo-tag">${role} ${plan.length}${t('hole')}</span>${act ? `<span class="lo-using">${t('using')}</span>` : ''}</div>`;
+      h += g ? moveCell(g[0], 'main') : `<div class="lo-cell empty main" data-col="${gi}"><span class="lo-plus">＋</span><span>${t('emptyMain')}</span></div>`;
+      h += `<div class="lo-socks"><div class="lo-sock-label">${t('socket')} ${p.socketCap(gi)}/${plan.length}</div>`;
+      for (let k = 0; k < plan.length; k++) {
+        const lv = plan[k], unlocked = p.level >= lv;
+        if (!unlocked) {
+          h += `<div class="lo-cell locked"><span>🔒</span><small>${t('locked')(lv)}</small></div>`;
+        } else if (!g) {
+          h += `<div class="lo-cell locked wait"><small>${t('needMain')}</small></div>`;
+        } else if (g[k + 1]) h += moveCell(g[k + 1], 'sock');
         else h += `<div class="lo-cell empty lo-sk" data-gi="${gi}"><span class="lo-plus">＋</span><span>${t('emptySock')}</span></div>`;
       }
       h += '</div></div>';
@@ -104,7 +111,7 @@ G.LoadoutUI = (() => {
     if (!c || !p) return null;
     if (c.dataset.move) return { move: p.moves.find(x => x.id === c.dataset.move) };
     if (c.dataset.gi != null) return { group: p.slots[+c.dataset.gi] };
-    if (c.dataset.new) return { newSlot: true };
+    if (c.dataset.col != null) return { column: +c.dataset.col };
     return null;
   }
 

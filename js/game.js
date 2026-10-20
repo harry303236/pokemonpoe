@@ -137,6 +137,7 @@ G.Game = (() => {
     G.Judgment.reset();
     G.Events.reset();
     G.Weather.reset();
+    G.Support.reset();
     G.Path.clear();
     G.Hazards.clear();
     G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
@@ -392,9 +393,9 @@ G.Game = (() => {
 
   // ---------------- subida de nivel ----------------
 
-  /** Al llegar a 5/10/15/20 sale una ranura más en cada movimiento principal. */
+  /** Al llegar a un nivel del plan de alguna tecla, avisa de que se abre una ranura. */
   function announceSocket() {
-    if (pl.level % G.Player.SOCKET_EVERY === 0 && pl.socketCap() > 0 && pl.level <= G.Player.SOCKET_EVERY * G.Player.SOCKET_MAX)
+    if (G.Player.SOCKET_PLAN.some(col => col.includes(pl.level)))
       G.Spawner.say(G.T('¡Nueva ranura!'), 3, true);
   }
 
@@ -473,17 +474,15 @@ G.Game = (() => {
   }
 
   /**
-   * Aprender un movimiento (carta "nuevo"). Si caben varios sitios (hueco libre
-   * y/o ranuras), eliges; en grupo se coloca solo (hueco libre primero) para no
-   * parar la partida de los demás: luego se cambia en la pausa.
+   * Aprender un movimiento (carta "nuevo"). Se coloca solo en la primera tecla
+   * legal de su familia (o en una ranura de esa familia). En grupo igual: no
+   * se para la partida. Luego se reordena con Tab.
    */
   function learn(id) {
     if (!pl) return false;
-    const opts = pl.placements();
-    if (!opts.length) return false;
-    // PokemonPOE: sin pantalla de colocación. Hueco principal libre primero; si no,
-    // la primera ranura libre. Luego se reordena a gusto con Tab.
-    return place(id, opts[0]);
+    const home = pl.placeHome(id);
+    if (!home) return false;
+    return place(id, home);
   }
 
   // ---------------- recogida ----------------

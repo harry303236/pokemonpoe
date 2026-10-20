@@ -36,7 +36,7 @@ G.Combat = (() => {
     }
     // Apoyo: no se gasta si no hace falta (vida llena, sin enemigos cerca).
     if (G.Support.KINDS.has(m.kind) && !G.Support.ready(pl, m)) { m.t = 0.3; return; }
-    m.t = Math.max(0.05, m.cd * pl.cdMul * G.Abilities.cd(pl, m));
+    m.t = Math.max(0.05, m.cd * pl.cdScale() * G.Abilities.cd(pl, m));
     pl.cast(m);
     if (G.Coop.active) G.Coop.cast(pl, m);
     // Vínculo: su icono destella en el HUD al lanzarse (uno que explota pegado al
@@ -47,9 +47,8 @@ G.Combat = (() => {
   }
 
   function run(pl, m) {
+    if (G.Support.KINDS.has(m.kind)) { G.Support.cast(pl, m, ghost); return; }
     switch (m.kind) {
-      case 'heal': case 'shield': case 'guard': case 'taunt': case 'protect': case 'rally':
-        G.Support.cast(pl, m, ghost); break;
       case 'projectile': fireProjectiles(pl, m); break;
       case 'melee':      melee(pl, m); break;
       case 'beam':       beam(pl, m); break;

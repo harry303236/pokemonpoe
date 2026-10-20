@@ -207,6 +207,43 @@
       { t: '+30% radio',                    m: { radius: 1.30 } },
       { t: '-25% recarga y +30% potencia',  m: { cd: 0.75, amount: 1.30 } }
     ],
+    // Segunda tanda de apoyo (20-10-2026).
+    wish: [
+      { t: '+40% curación',                 m: { amount: 1.40 } },
+      { t: 'Llega un 25% antes',            m: { delay: 0.75 } },
+      { t: '-25% recarga',                  m: { cd: 0.75 } },
+      { t: '+40% curación y +30% radio',    m: { amount: 1.40, radius: 1.30 } }
+    ],
+    synth: [
+      { t: '+40% curación',                 m: { amount: 1.40 } },
+      { t: '-25% recarga',                  m: { cd: 0.75 } },
+      { t: '+30% curación',                 m: { amount: 1.30 } },
+      { t: '+40% curación y -15% recarga',  m: { amount: 1.40, cd: 0.85 } }
+    ],
+    weather: [
+      { t: '+40% duración',                 m: { dur: 1.40 } },
+      { t: '-25% recarga',                  m: { cd: 0.75 } },
+      { t: '+30% duración',                 m: { dur: 1.30 } },
+      { t: '-20% recarga',                  m: { cd: 0.80 } }
+    ],
+    field: [
+      { t: '+40% potencia',                 m: { amount: 1.40 } },
+      { t: '+40% duración',                 m: { dur: 1.40 } },
+      { t: '+30% radio',                    m: { radius: 1.30 } },
+      { t: '-25% recarga y +30% potencia',  m: { cd: 0.75, amount: 1.30 } }
+    ],
+    control: [
+      { t: '+30% radio',                    m: { radius: 1.30 } },
+      { t: '+40% duración del efecto',      m: { stun: 1.40 } },
+      { t: '-25% recarga',                  m: { cd: 0.75 } },
+      { t: '+30% radio y -20% recarga',     m: { radius: 1.30, cd: 0.80 } }
+    ],
+    haste: [
+      { t: '+40% potencia',                 m: { amount: 1.40 } },
+      { t: '+50% duración',                 m: { dur: 1.50 } },
+      { t: '+30% radio',                    m: { radius: 1.30 } },
+      { t: '-25% recarga y +30% potencia',  m: { cd: 0.75, amount: 1.30 } }
+    ],
     buff: [
       { t: '+1 acumulación máxima',         m: { stacks: 1 } },
       { t: '+40% potencia',                 m: { amount: 1.40 } },
@@ -671,7 +708,36 @@
       cd: 12, radius: 340, dur: 5, guard: 0.25 },
     { id: 'tailwind', name: 'Viento Afín', type: 'flying', kind: 'rally', support: true,
       desc: 'Un viento a favor: sube la velocidad de todo el equipo cercano un rato.',
-      cd: 14, amount: 0.25, dur: 6, radius: 450 }
+      cd: 14, amount: 0.25, dur: 6, radius: 450 },
+
+    // ---------------- APOYO, segunda tanda (20-10-2026) ----------------
+    { id: 'wish', name: 'Deseo', type: 'normal', kind: 'wish', support: true,
+      desc: 'Una cura grande que llega unos segundos después, a ti y a quien estuviera cerca al lanzarla.',
+      cd: 16, amount: 0.42, delay: 3.5, radius: 180 },
+    { id: 'synthesis', name: 'Síntesis', type: 'grass', kind: 'synth', support: true,
+      desc: 'Te curas. Con sol cura más; con lluvia, arena o nieve, menos. Sólo a ti.',
+      cd: 12, amount: 0.26, radius: 0 },
+    { id: 'sunny-day', name: 'Día Soleado', type: 'fire', kind: 'weather', support: true, wx: 'sun',
+      desc: 'Sale el sol un rato: el Fuego pega más y el Agua menos. Lo aprovecha todo el equipo.',
+      cd: 24, dur: 16 },
+    { id: 'rain-dance', name: 'Danza Lluvia', type: 'water', kind: 'weather', support: true, wx: 'rain',
+      desc: 'Llama la lluvia un rato: el Agua y el Eléctrico pegan más, y el Fuego menos.',
+      cd: 24, dur: 16 },
+    { id: 'grassy-terrain', name: 'Campo de Hierba', type: 'grass', kind: 'field', support: true, field: 'heal',
+      desc: 'Una zona de hierba que va curando a quien se quede dentro.',
+      cd: 14, amount: 0.028, dur: 8, radius: 170 },
+    { id: 'electric-terrain', name: 'Campo Eléctrico', type: 'electric', kind: 'field', support: true, field: 'haste',
+      desc: 'Una zona electrificada: quien esté dentro ataca más rápido.',
+      cd: 14, amount: 0.18, dur: 8, radius: 170 },
+    { id: 'glare', name: 'Deslumbrar', type: 'normal', kind: 'control', support: true, ctrl: 'stun',
+      desc: 'Paralizas a los enemigos cercanos un instante, sin hacerles daño (como Onda Trueno).',
+      cd: 9, radius: 200, stun: 1.3 },
+    { id: 'spirit-burn', name: 'Llama Espectral', type: 'fire', kind: 'control', support: true, ctrl: 'burn',
+      desc: 'Prendes a los enemigos cercanos. No golpea: sólo quema, como Fuego Fatuo.',
+      cd: 8, radius: 180, burn: 2 },
+    { id: 'coaching', name: 'Arenga', type: 'fighting', kind: 'haste', support: true,
+      desc: 'Animas al equipo cercano: atacan más rápido un rato. Correr más es Viento Afín.',
+      cd: 14, amount: 0.22, dur: 6, radius: 420 }
   ];
 
   // Cuerpo a cuerpo (12-10-2026): +20 % de daño y +25 % de alcance y de arco
@@ -685,10 +751,13 @@
   }
 
   // Pool de movimientos por tipo. El pool `normal` lo tienen todos.
+  // El apoyo no va aquí: sólo lo aprende quien puede aprenderlo de verdad
+  // (js/data/support-learn.js, bajado de PokeAPI).
   const POOL = {};
-  // (El apoyo no va en la lista de su tipo: lo puede aprender cualquiera, ver SUPPORT.)
   for (const m of RAW) if (!m.support) (POOL[m.type] = POOL[m.type] || []).push(m.id);
   const SUPPORT = RAW.filter(m => m.support).map(m => m.id);
+  const SUPPORT_WHO = {};
+  for (const id of SUPPORT) SUPPORT_WHO[id] = new Set((G.SUPPORT_LEARN && G.SUPPORT_LEARN[id]) || []);
 
   /*
    * Físico o especial (G.Stats), como en los juegos. Los de estado que aquí sí
@@ -719,6 +788,98 @@
     return [...ids];
   }
 
+  /** Apoyo que este Pokémon aprende de verdad (nivel, MT, tutor o huevo). */
+  function supportFor(mon) {
+    const dex = mon && mon.dex;
+    if (!dex) return [];
+    return SUPPORT.filter(id => SUPPORT_WHO[id].has(dex));
+  }
+
+  /** Lo que puede salir en una run: su pool de tipo y el apoyo que sí aprende. */
+  function learnSet(mon) {
+    const ids = poolFor(mon);
+    for (const id of supportFor(mon)) if (!ids.includes(id)) ids.push(id);
+    return ids;
+  }
+
+  // Etiquetas para la ficha (Pokémon desbloqueado). El texto es la clave de traducción.
+  const ROLES = [
+    { id: 'dmg', name: 'Ofensivo', color: '#ff6b6b' },
+    { id: 'control', name: 'Control', color: '#c792ea' },
+    { id: 'taunt', name: 'Provocar', color: '#ff9f43' },
+    { id: 'heal', name: 'Curación', color: '#5fe08a' },
+    { id: 'guard', name: 'Proteger', color: '#74b9ff' },
+    { id: 'field', name: 'Terreno', color: '#ffe14d' },
+    { id: 'spd', name: 'Velocidad', color: '#81ecec' },
+    { id: 'haste', name: 'Ataque rápido', color: '#ffd23f' },
+    { id: 'buff', name: 'Mejora', color: '#f6c945' }
+  ];
+  const ROLE_BY = {};
+  for (const r of ROLES) ROLE_BY[r.id] = r;
+  const KIND_ROLE = {
+    heal: 'heal', wish: 'heal', synth: 'heal',
+    shield: 'guard', guard: 'guard', protect: 'guard',
+    taunt: 'taunt', rally: 'spd', haste: 'haste',
+    weather: 'field', field: 'field', control: 'control'
+  };
+
+  /** Etiqueta de un movimiento (id o definición): ofensivo, curación, provocar... */
+  function roleOf(idOrMove) {
+    const m = typeof idOrMove === 'string' ? BY_ID[idOrMove] : idOrMove;
+    if (!m) return 'dmg';
+    if (m.role) return m.role;
+    if (m.kind === 'stun') return 'control';
+    if (m.kind === 'buff') {
+      if (m.stat === 'spd') return 'spd';
+      if (m.stat === 'def') return 'guard';
+      if (m.stat === 'regen') return 'heal';
+      return 'buff';
+    }
+    return KIND_ROLE[m.kind] || 'dmg';
+  }
+  function roleName(idOrMove) {
+    const r = ROLE_BY[roleOf(idOrMove)];
+    return r ? r.name : 'Ofensivo';
+  }
+
+  // Dónde vive un movimiento (PokemonPOE). La etiqueta de la ficha no basta:
+  // Viento Afín es velocidad pero va con los ataques, y Campo de Hierba es
+  // terreno pero es una cura. 'heal' es un caso de 'back': sólo puede ser el
+  // principal de la tecla 3 o 4, y sólo una en toda la run.
+  const FRONT_STAT = new Set(['patk', 'satk', 'spd']);
+  const FRONT_SUPPORT = new Set(['tailwind', 'coaching', 'electric-terrain', 'sunny-day', 'rain-dance']);
+
+  /** 'front' (teclas 1-2), 'back' (3-4) o 'heal' (principal de la 3 o la 4). */
+  function homeOf(idOrMove) {
+    const m = typeof idOrMove === 'string' ? BY_ID[idOrMove] : idOrMove;
+    if (!m) return 'front';
+    const kind = m.kind, stat = m.stat;
+    if (kind === 'heal' || kind === 'wish' || kind === 'synth') return 'heal';
+    if (kind === 'buff' && stat === 'regen') return 'heal';
+    if (kind === 'field' && m.field === 'heal') return 'heal';
+    if (kind === 'protect' || kind === 'guard' || kind === 'shield' || kind === 'taunt') return 'back';
+    if (kind === 'control' && m.support) return 'back';
+    if (kind === 'buff' && stat === 'def') return 'back';
+    if (kind === 'weather' || kind === 'rally' || kind === 'haste') return 'front';
+    if (kind === 'field' && m.field === 'haste') return 'front';
+    if (kind === 'buff' && FRONT_STAT.has(stat)) return 'front';
+    if (FRONT_SUPPORT.has(m.id)) return 'front';
+    if (m.support) return 'back';
+    return 'front';
+  }
+
+  /** ¿Puede ser el principal de esa tecla (0-3)? No mira si ya hay otra cura. */
+  function fitsColumn(id, col) {
+    const home = homeOf(id);
+    return home === 'front' ? col < 2 : col >= 2 && col < 4;
+  }
+
+  /** Danza Espada, Maquinación, Danza Dragón y Agilidad. Fortaleza y Acua Aro no. */
+  function isFrontBuff(idOrMove) {
+    const m = typeof idOrMove === 'string' ? BY_ID[idOrMove] : idOrMove;
+    return !!(m && m.kind === 'buff' && FRONT_STAT.has(m.stat));
+  }
+
   /**
    * Instancia de movimiento en una run: los números base de `def` con todas
    * las mejoras de la escalera hasta `lvl` ya aplicadas.
@@ -732,7 +893,7 @@
   }
 
   const MULT = ['dmg', 'cd', 'speed', 'radius', 'dur', 'amount', 'arc', 'width', 'spread', 'life', 'size', 'rate',
-                'pull', 'knock', 'stun', 'charge', 'guard'];
+                'pull', 'knock', 'stun', 'charge', 'guard', 'delay'];
   const ADD = ['count', 'pierce', 'stacks', 'bounce'];
 
   function applyMods(s, m) {
@@ -876,6 +1037,6 @@
     return true;
   }
 
-  G.Moves = { ALL: RAW, BY_ID, POOL, SUPPORT, poolFor, instance, levelUp, nextUpText, startFor,
-              EVO, NEED_NAME, evoInfo, evolve };
+  G.Moves = { ALL: RAW, BY_ID, POOL, SUPPORT, poolFor, supportFor, learnSet, instance, levelUp, nextUpText, startFor,
+              ROLES, roleOf, roleName, homeOf, fitsColumn, isFrontBuff, EVO, NEED_NAME, evoInfo, evolve };
 })();

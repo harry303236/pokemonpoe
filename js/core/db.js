@@ -158,6 +158,7 @@ G.DB = (() => {
         s.pbind[d] = [0, 1, 2, 3].map(i => {
           const id = l[i];
           if (typeof id !== 'string' || (G.Moves && !G.Moves.BY_ID[id]) || seen.has(id)) return null;
+          if (G.Moves && G.Moves.fitsColumn && !G.Moves.fitsColumn(id, i)) return null;
           seen.add(id); return id;
         });
       }

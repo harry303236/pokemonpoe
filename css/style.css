@@ -466,6 +466,17 @@ img.pix { image-rendering: pixelated; image-rendering: crisp-edges; vertical-ali
 .cell .stars-row { display: flex; justify-content: center; margin-top: 2px; }
 .badge-r { position: absolute; top: 3px; right: 4px; }
 .move-icons { display: flex; flex-wrap: wrap; gap: 3px; margin: 0 0 10px; }
+.pool-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.pool-tags .chip { padding: 1px 7px; font-size: 12px; }
+.pool-tags .chip.on { border-color: var(--c, var(--gold)); background: rgba(255,210,63,.16); }
+.pool-list { max-height: 220px; overflow-y: auto; margin-bottom: 4px; }
+.pool-h { display: flex; align-items: center; gap: 6px; margin: 6px 0 2px; font-size: 12px; color: var(--muted); }
+.pool-tag { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; color: #10131a; text-shadow: none; }
+.pool-mv { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; cursor: pointer;
+  background: transparent; border: 0; color: inherit; font: inherit; font-size: 13px; padding: 2px 4px; border-radius: 4px; }
+.pool-mv:hover, .pool-mv.on { background: rgba(255,255,255,.08); }
+.pool-mv span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pool-desc { font-size: 12px; color: var(--muted); margin: 2px 0 8px; min-height: 2.6em; line-height: 1.35; }
 .card .ico img { display: block; }
 .upg-item .ic { display: flex; justify-content: center; }
 
@@ -900,6 +911,8 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   #dex-detail .stat { grid-template-columns: 62px 1fr 34px; gap: 4px; font-size: 12px; margin: 2px 0; }
   #dex-detail p { margin: 4px 0 !important; font-size: 12px !important; }
   #dex-detail .move-icons { margin-bottom: 4px; }
+  #dex-detail .pool-list { max-height: 140px; }
+  #dex-detail .pool-tags { flex-wrap: nowrap; overflow-x: auto; }
   /* El botón de elegir, pegado abajo de la ficha: se ve aunque la ficha no quepa. */
   #dex-detail .btn { position: sticky; bottom: 0; order: 9; margin-top: auto; padding: 8px 6px; font-size: 15px;
     box-shadow: 0 -6px 10px rgba(5,10,25,.6); }
@@ -920,6 +933,8 @@ html:lang(zh) .btn, html:lang(zh) .chip { letter-spacing: 0; }
 .lo-pip.on { border-color: var(--green); color: var(--green); opacity: 1; background: rgba(95,224,138,.12); }
 .lo-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 14px 0; user-select: none; text-align: left; }
 .lo-col { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 6px; border: 2px solid rgba(255,255,255,.14); background: rgba(8,16,44,.55); }
+.lo-col.job { border-color: rgba(95,224,138,.4); background: rgba(10,32,28,.55); }
+.lo-col.job .lo-key { background: rgba(95,224,138,.45); }
 .lo-col.active { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(255,210,63,.25), 0 0 18px rgba(255,210,63,.25); }
 .lo-col.none { opacity: .85; }
 .lo-head { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }

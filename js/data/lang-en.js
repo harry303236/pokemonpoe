@@ -730,6 +730,8 @@ G.I18n.add({
   'Atajos de movimientos': 'Move shortcuts', 'Libre': 'Free',
   'Elige qué movimiento va siempre en cada hueco (teclas 1-4 o los iconos de abajo), para la memoria muscular. Si aún no tienes tantos movimientos, va al hueco más cercano.':
     'Choose which move always goes in each slot (keys 1-4 or the icons at the bottom), for muscle memory. If you do not have that many moves yet, it goes to the closest slot.',
+  'Elige qué movimiento va siempre en cada tecla (1-4), para la memoria muscular. Las teclas 1 y 2 son de ataque (también mejoras de ataque, clima y velocidad). Las teclas 3 y 4 son de oficio (curar, proteger, provocar). Una cura sólo puede ser el movimiento principal de la 3 o de la 4.':
+    'Choose which move always goes on each key (1-4), for muscle memory. Keys 1 and 2 are attacks (including attack buffs, weather and speed). Keys 3 and 4 are roles (heal, protect, taunt). A heal can only be the main move of key 3 or 4.',
   'Golpe Crítico': 'Critical Hit', '+3% de críticos (x1,5 de daño)': '+3% critical chance (x1.5 damage)',
   'Cambio de cartas': 'Card reroll', '+1 cambio de cartas de nivel por run': '+1 level-up card reroll per run',
   'Veto': 'Ban', 'Bloquea 1 movimiento: no te sale en las cartas': 'Ban 1 move: it never shows up in your cards',
@@ -783,6 +785,8 @@ G.I18n.add({
   'Recuperación': 'Recover', 'Pulso Cura': 'Heal Pulse', 'Gota Cura': 'Life Dew', 'Campana Cura': 'Heal Bell',
   'Protección': 'Protect', 'Reflejo': 'Reflect', 'Pantalla de Luz': 'Light Screen', 'Velo Aurora': 'Aurora Veil',
   'Defensa Férrea': 'Iron Defense', 'Mofa': 'Taunt', 'Señuelo': 'Follow Me', 'Viento Afín': 'Tailwind',
+  'Deseo': 'Wish', 'Día Soleado': 'Sunny Day', 'Danza Lluvia': 'Rain Dance', 'Campo de Hierba': 'Grassy Terrain',
+  'Deslumbrar': 'Glare', 'Llama Espectral': 'Spectral Flame', 'Arenga': 'Cheer',
   'Apoyo': 'Support',
   'Te curas un buen trozo de vida de golpe. Sólo a ti.': 'Heal a big chunk of HP at once. Self only.',
   'Una onda que cura a ti y a los compañeros que tengas cerca.': 'A wave that heals you and nearby teammates.',
@@ -800,5 +804,22 @@ G.I18n.add({
   '+40% escudo': '+40% shield', '+50% escudo y -15% recarga': '+50% shield and -15% cooldown',
   '+30% reducción de daño': '+30% damage reduction', '+25% reducción y -20% recarga': '+25% reduction and -20% cooldown',
   '+40% reducción de daño propia': '+40% own damage reduction', '-25% recarga y +30% radio': '-25% cooldown and +30% radius',
-  '+40% potencia': '+40% power', '-25% recarga y +30% potencia': '-25% cooldown and +30% power'
+  '+40% potencia': '+40% power', '-25% recarga y +30% potencia': '-25% cooldown and +30% power',
+  'Una cura grande que llega unos segundos después, a ti y a quien estuviera cerca al lanzarla.': 'A big heal that arrives a few seconds later, for you and whoever was nearby when you cast it.',
+  'Te curas. Con sol cura más; con lluvia, arena o nieve, menos. Sólo a ti.': 'Heal yourself. More in the sun; less in rain, sand or snow. Self only.',
+  'Sale el sol un rato: el Fuego pega más y el Agua menos. Lo aprovecha todo el equipo.': 'The sun comes out for a while: Fire hits harder and Water hits less. The whole team benefits.',
+  'Llama la lluvia un rato: el Agua y el Eléctrico pegan más, y el Fuego menos.': 'Call rain for a while: Water and Electric hit harder, and Fire hits less.',
+  'Una zona de hierba que va curando a quien se quede dentro.': 'A patch of grass that keeps healing whoever stays inside.',
+  'Una zona electrificada: quien esté dentro ataca más rápido.': 'An electrified patch: whoever stands inside attacks faster.',
+  'Paralizas a los enemigos cercanos un instante, sin hacerles daño (como Onda Trueno).': 'Paralyze nearby enemies for a moment, without damaging them (like Thunder Wave).',
+  'Prendes a los enemigos cercanos. No golpea: sólo quema, como Fuego Fatuo.': 'Set nearby enemies on fire. It does not hit: it only burns, like Will-O-Wisp.',
+  'Animas al equipo cercano: atacan más rápido un rato. Correr más es Viento Afín.': 'Cheer nearby allies: they attack faster for a while. Running faster is Tailwind.',
+  'Llega un 25% antes': 'Arrives 25% sooner', '+30% curación': '+30% healing',
+  '+40% curación y +30% radio': '+40% healing and +30% radius', '+30% duración': '+30% duration',
+  '+40% duración del efecto': '+40% effect duration', '+30% radio y -20% recarga': '+30% radius and -20% cooldown',
+  'Ofensivo': 'Offense', 'Control': 'Control', 'Provocar': 'Taunt', 'Curación': 'Healing', 'Proteger': 'Protect',
+  'Terreno': 'Field', 'Ataque rápido': 'Attack speed',
+  'Toca un movimiento para leer qué hace. El apoyo sólo sale si este Pokémon puede aprenderlo.': 'Tap a move to read what it does. Support only shows up if this Pokémon can learn it.',
+  'Nuevo apoyo, sólo si ese Pokémon puede aprenderlo: Deseo, Síntesis, Día Soleado, Danza Lluvia, Campo de Hierba, Campo Eléctrico, Deslumbrar (paraliza, como Onda Trueno), Llama Espectral (quema, como Fuego Fatuo) y Arenga (el equipo cercano ataca más rápido).': 'New support, only if that Pokémon can learn it: Wish, Synthesis, Sunny Day, Rain Dance, Grassy Terrain, Electric Terrain, Glare (paralyzes, like Thunder Wave), Spectral Flame (burns, like Will-O-Wisp) and Cheer (nearby allies attack faster).',
+  'El apoyo (curar, provocar, clima, terreno...) ya no lo aprende cualquiera: sólo el Pokémon que puede aprender ese movimiento, por nivel, MT o tutor.': 'Support (healing, taunt, weather, terrain...) is no longer for everyone: only a Pokémon that can learn that move, by level, TM or tutor, gets it.'
 });

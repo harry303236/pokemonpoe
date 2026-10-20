@@ -243,7 +243,9 @@ G.HUD = (() => {
 
     // ---------- ranura de movimientos ----------
     const S = 54, GAP = 9;
-    const n = Math.max(1, pl.slots.length);
+    let last = -1;
+    for (let i = 0; i < pl.maxMoves; i++) if (pl.slots[i] && pl.slots[i].length) last = i;
+    const n = Math.max(1, last + 1);
     const totalW = n * S + (n - 1) * GAP;
     let sx = (w - totalW) / 2;
     // Por encima de la barra de inicio del iPhone (allí los toques a veces no llegan).
@@ -258,7 +260,7 @@ G.HUD = (() => {
       sy = G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6);
     }
     const BOND = '#ff8ad8';              // color de las ranuras
-    const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul * G.Abilities.cd(pl, m)), 0, 1);
+    const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdScale() * G.Abilities.cd(pl, m)), 0, 1);
 
     for (let i = 0; i < n; i++) {
       const g = pl.slots[i] || [];
@@ -280,7 +282,13 @@ G.HUD = (() => {
       ctx.strokeStyle = fused ? BOND : m && m.evolved ? '#ffd23f' : on ? col : 'rgba(140,170,210,.22)';
       ctx.stroke();
 
-      if (!m) continue;
+      if (!m) {
+        ctx.font = F(800, 9);
+        ctx.fillStyle = 'rgba(180,200,230,.35)';
+        ctx.textAlign = 'left';
+        ctx.fillText(String(i + 1), x + 3, y + 10);
+        continue;
+      }
 
       {
         // recarga: se vacía de abajo a arriba
@@ -308,7 +316,7 @@ G.HUD = (() => {
 
       // ranuras: iconos pequeños de los insertados (con su recarga) y círculos vacíos si quedan libres
       {
-        const cap = pl.socketCap();
+        const cap = pl.socketCap(i);
         if (cap > 0) {
           const C = 10, SG = 2, tw = cap * C + (cap - 1) * SG, x0 = x + (S - tw) / 2, y0 = y + S + 3;
           for (let k = 0; k < cap; k++) {

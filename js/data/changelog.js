@@ -6,9 +6,20 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-21', title: ['Más apoyo y la lista de movimientos', 'More support and the move list'], new: [
+    ['Nuevo apoyo, sólo si ese Pokémon puede aprenderlo: Deseo, Síntesis, Día Soleado, Danza Lluvia, Campo de Hierba, Campo Eléctrico, Deslumbrar (paraliza, como Onda Trueno), Llama Espectral (quema, como Fuego Fatuo) y Arenga (el equipo cercano ataca más rápido).',
+     'New support, only if that Pokémon can learn it: Wish, Synthesis, Sunny Day, Rain Dance, Grassy Terrain, Electric Terrain, Glare (paralyzes, like Thunder Wave), Spectral Flame (burns, like Will-O-Wisp) and Cheer (nearby allies attack faster).'],
+    ['En la ficha de un Pokémon que ya tienes se ve todo lo que puede aprender, separado por etiquetas: ofensivo, control, provocar, curación, proteger, terreno, velocidad, ataque rápido y mejora.',
+     'A Pokémon you own shows everything it can learn, split by tags: offense, control, taunt, healing, protect, field, speed, attack speed and buff.']
+  ], chg: [
+    ['El apoyo (curar, provocar, clima, terreno...) ya no lo aprende cualquiera: sólo el Pokémon que puede aprender ese movimiento, por nivel, MT o tutor.',
+     'Support (healing, taunt, weather, terrain...) is no longer for everyone: only a Pokémon that can learn that move, by level, TM or tutor, gets it.'],
+    ['Las ranuras ya no son 4 en cada ataque. La tecla 1 tiene 4, la 2 tiene 3 y la 3 y la 4 tienen 2, abiertas del nivel 5 al 20. Curar sólo puede ser el ataque principal de la tecla 3 o 4 (una cura en total) y no se enlaza con un ataque. Danza Espada, el clima que potencia y la prisa van con los ataques.',
+     'Sockets are no longer 4 on every attack. Key 1 has 4, key 2 has 3, and keys 3 and 4 have 2, opening from level 5 to 20. A heal can only be the main move of key 3 or 4 (one heal in total) and is not linked to an attack. Swords Dance, boosting weather and haste go with the attacks.']
+  ] },
   { d: '2026-10-20', title: ['PokemonPOE: apoyo, evolución, habilidades y cooperativo por códigos', 'PokemonPOE: support, evolution, abilities and code-based co-op'], new: [
-    ['12 movimientos de apoyo que puede aprender cualquier Pokémon: curar (Recuperación, Pulso Cura, Gota Cura, Campana Cura), proteger (Protección, Reflejo, Pantalla de Luz, Velo Aurora, Defensa Férrea), provocar (Mofa, Señuelo) y Viento Afín. El rol (sanador, tanque...) lo decide lo que lleves, no el tipo.',
-     '12 support moves any Pokémon can learn: healing (Recover, Heal Pulse, Life Dew, Heal Bell), protection (Protect, Reflect, Light Screen, Aurora Veil, Iron Defense), taunting (Taunt, Follow Me) and Tailwind. Your role (healer, tank...) comes from what you carry, not your type.'],
+    ['12 movimientos de apoyo: curar (Recuperación, Pulso Cura, Gota Cura, Campana Cura), proteger (Protección, Reflejo, Pantalla de Luz, Velo Aurora, Defensa Férrea), provocar (Mofa, Señuelo) y Viento Afín. Cada Pokémon sólo aprende los que puede aprender de verdad. El rol (sanador, tanque...) lo decide lo que lleves, no el tipo.',
+     '12 support moves: healing (Recover, Heal Pulse, Life Dew, Heal Bell), protection (Protect, Reflect, Light Screen, Aurora Veil, Iron Defense), taunting (Taunt, Follow Me) and Tailwind. Each Pokémon only learns the ones it can actually learn. Your role (healer, tank...) comes from what you carry, not your type.'],
     ['Cooperativo sin cuentas: invita a tus amigos con códigos de conexión (Menú > Con amigos), hasta 4 jugadores.',
      'Account-free co-op: invite friends with connection codes (Menu > Play with friends), up to 4 players.'],
     ['Evolución durante la partida (Nv.8 y Nv.15) y una habilidad por Pokémon (Nv.10 si no evoluciona, o al llegar a la forma final).',
