@@ -30,6 +30,7 @@ G.Net = (() => {
 
   let rtdb = null, uid = null, roomId = null, isHost = false, hostUid = null;
   let qref = null;
+  const LOCAL = 'local';           // sala sin servidor: la señalización se hace a mano (códigos de conexión)
   const peers = new Map();         // uid -> { pc, dc, mode, timer }
   const handlers = new Set(), peerHandlers = new Set();
   const stats = { sent: 0, recv: 0, relaySent: 0,
@@ -146,7 +147,7 @@ G.Net = (() => {
     p.mode = 'failed';
     try { if (p.pc) p.pc.close(); } catch (e) { /* nada */ }
     emitPeer(u);
-    if (isHost) p.timer = setTimeout(() => { if (peers.get(u) === p && p.mode === 'failed' && roomId) { drop(u, true); connect(u); } }, RETRY_MS);
+    if (isHost && roomId !== LOCAL) p.timer = setTimeout(() => { if (peers.get(u) === p && p.mode === 'failed' && roomId) { drop(u, true); connect(u); } }, RETRY_MS);
   }
 
   /** Anfitrión: abre conexión con un invitado. */
@@ -243,8 +244,76 @@ G.Net = (() => {
     handlers.forEach(fn => { try { fn(from, msg); } catch (e) { console.error('[Net] mensaje:', e); } });
   }
 
+  // ---------------- modo manual (sin servidor ni cuentas) ----------------
+  // El anfitrión genera un CÓDIGO DE INVITACIÓN por amigo (oferta WebRTC con todos
+  // los candidatos ICE dentro); el amigo lo pega, genera un CÓDIGO DE RESPUESTA y lo
+  // devuelve; el anfitrión lo pega y el canal directo se abre. Sólo STUN de Google.
+
+  function openLocal(myUid, host, hostId) {
+    close();
+    uid = myUid; roomId = LOCAL; isHost = host; hostUid = hostId; rtdb = null;
+  }
+
+  function waitIce(pc, ms = 5000) {
+    return new Promise(res => {
+      if (pc.iceGatheringState === 'complete') { res(); return; }
+      const done = () => { clearTimeout(t); pc.removeEventListener('icegatheringstatechange', chk); res(); };
+      const chk = () => { if (pc.iceGatheringState === 'complete') done(); };
+      const t = setTimeout(done, ms);
+      pc.addEventListener('icegatheringstatechange', chk);
+    });
+  }
+  const enc = o => btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+  const dec = s => JSON.parse(decodeURIComponent(escape(atob(String(s).replace(/\s+/g, '')))));
+
+  /** Par sin temporizador de 9 s: el humano tarda en copiar y pegar. */
+  function manualPeer(u) {
+    const p = newPeer(u);
+    clearTimeout(p.timer); p.timer = 0;
+    return p;
+  }
+
+  /** Anfitrión: código de invitación para un amigo nuevo (`g` = su identificador). */
+  async function hostOffer(g) {
+    if (roomId !== LOCAL || !isHost) throw Error('no-room');
+    if (peers.has(g)) drop(g, true);
+    const p = manualPeer(g);
+    if (!p.pc) throw Error('no-webrtc');
+    wireChannel(g, p, p.pc.createDataChannel('g', { ordered: true }));
+    await p.pc.setLocalDescription(await p.pc.createOffer());
+    await waitIce(p.pc);
+    return enc({ v: 1, h: uid, g, sdp: p.pc.localDescription.toJSON() });
+  }
+
+  /** Invitado: pega el código de invitación → código de respuesta. */
+  async function guestAnswer(code) {
+    const d = dec(code);
+    if (!d || d.v !== 1 || !d.sdp || d.sdp.type !== 'offer' || !d.h || !d.g) throw Error('bad-code');
+    const myUid = d.g;                   // el anfitrión ya te ha puesto identificador en la invitación
+    openLocal(myUid, false, d.h);
+    const p = manualPeer(d.h);
+    if (!p.pc) throw Error('no-webrtc');
+    p.pc.ondatachannel = e => wireChannel(d.h, p, e.channel);
+    await p.pc.setRemoteDescription(d.sdp);
+    await p.pc.setLocalDescription(await p.pc.createAnswer());
+    await waitIce(p.pc);
+    return { host: d.h, uid: myUid, code: enc({ v: 1, h: d.h, g: myUid, sdp: p.pc.localDescription.toJSON() }) };
+  }
+
+  /** Anfitrión: pega el código de respuesta del amigo → se abre el canal. Devuelve su id. */
+  async function hostAccept(code) {
+    const d = dec(code);
+    if (!d || d.v !== 1 || !d.sdp || d.sdp.type !== 'answer' || !d.g) throw Error('bad-code');
+    const p = peers.get(d.g);
+    if (!p || !p.pc || d.h !== uid) throw Error('unknown');
+    await p.pc.setRemoteDescription(d.sdp);
+    return d.g;
+  }
+
   return {
-    open, close, syncMembers, send, toHost, broadcast,
+    open, close, syncMembers, send, toHost, broadcast, openLocal, hostOffer, guestAnswer, hostAccept,
+    dropPeer(u) { drop(u, true); },
+    get isLocal() { return roomId === LOCAL; },
     on(fn) { handlers.add(fn); }, off(fn) { handlers.delete(fn); },
     onPeer(fn) { peerHandlers.add(fn); },
     mode(u) { const p = peers.get(u); return p ? p.mode : 'closed'; },

@@ -146,8 +146,8 @@
 
     function init() {
       $('lobby-leave').onclick = async () => {
-        await G.Social.leaveRoom();
-        G.Net.close();
+        if (G.Social.room && G.Social.room.local) G.Link.leave();
+        else { await G.Social.leaveRoom(); G.Net.close(); }
         G.MenuUI.open();
       };
       $('lobby-menu').onclick = () => G.MenuUI.open();
@@ -157,8 +157,10 @@
       G.Social.on(what => {
         const room = G.Social.room;
         if (room) {
-          G.Net.open(room.id, room.isHost, room.host);
-          G.Net.syncMembers(room.members.map(m => m.uid));
+          if (!room.local) {
+            G.Net.open(room.id, room.isHost, room.host);
+            G.Net.syncMembers(room.members.map(m => m.uid));
+          }
         } else if (G.Net.open_) G.Net.close();
         if (what === 'room-closed') {
           G.UI.toast('La sala se ha cerrado', 2600);
@@ -181,6 +183,12 @@
     function close() { G.UI.hide('scr-lobby'); }
 
     function connText(m, room) {
+      if (room.local) {
+        if (m.uid === room.host) return '房主';
+        if (!room.isHost) return m.uid === G.Social.uid ? '你' : '已加入';
+        const md = G.Net.mode(m.uid);
+        return md === 'direct' ? '已連線' : md === 'failed' ? '連線失敗' : '連線中…';
+      }
       if (m.uid === room.host) return 'Anfitrión';
       if (!room.isHost) return m.uid === G.Social.uid ? 'Tú' : 'En la sala';
       const mode = G.Net.mode(m.uid);
@@ -191,7 +199,10 @@
       const room = G.Social.room;
       if (!room) return;
       const ms = room.members;
-      $('lobby-sub').textContent = room.isHost
+      $('lobby-sub').textContent = room.local ? (room.isHost
+        ? '你是房主。替每位朋友產生邀請碼並完成連線（最多 ' + G.Social.MAX_PLAYERS + ' 人），人到齊就開始。'
+        : '已加入 ' + ((ms.find(m => m.uid === room.host) || {}).name || '…') + ' 的房間，等房主開始遊戲。')
+        : room.isHost
         ? 'Eres el anfitrión. Invita a tus amigos (hasta ' + G.Social.MAX_PLAYERS + ') y empezad cuando estéis.'
         : 'Estás en la sala de ' + ((ms.find(m => m.uid === room.host) || {}).name || '…') + '. El anfitrión empezará la partida.';
 
@@ -218,11 +229,12 @@
         if (!m) return;
         const t = connText(m, room);
         el.textContent = t;
-        el.className = 'conn' + (t === 'Conectando…' ? ' wait' : '');
+        el.className = 'conn' + (t === 'Conectando…' || t === '連線中…' ? ' wait' : '');
       });
 
       // Invitar (sólo el anfitrión y si queda sitio).
-      const canInvite = room.isHost && ms.length < G.Social.MAX_PLAYERS;
+      const canInvite = room.isHost && !room.local && ms.length < G.Social.MAX_PLAYERS;
+      G.LinkUI.panel(room);
       $('lobby-inv-title').classList.toggle('hidden', !canInvite);
       const inv = $('lobby-invite');
       inv.classList.toggle('hidden', !canInvite);
@@ -247,7 +259,14 @@
       const connecting = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'connecting');
       const failed = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'failed');
       btn.disabled = !room.isHost || ms.length < 2 || connecting || failed;
-      btn.textContent = 'Empezar partida (' + ms.length + '/' + G.Social.MAX_PLAYERS + ')';
+      btn.textContent = (room.local ? '開始遊戲 (' : 'Empezar partida (') + ms.length + '/' + G.Social.MAX_PLAYERS + ')';
+      if (room.local) {
+        $('lobby-note').textContent = !room.isHost ? '房主開始後，大家會同時進入遊戲。'
+          : ms.length < 2 ? '至少需要一位朋友連線進來。'
+          : failed ? '有人連線失敗：可能是網路限制，請該朋友換網路後重新連線。'
+          : connecting ? '連線中…' : '準備好了，按開始！';
+        return;
+      }
       $('lobby-note').textContent = !room.isHost ? 'Cuando el anfitrión empiece, entraréis todos a la vez.'
         : ms.length < 2 ? 'Necesitas al menos un amigo en la sala.'
         : failed ? 'No se puede conectar con algún amigo: su red (o la tuya) no deja jugar en grupo. Probad con otra wifi o datos móviles; se reintenta solo.'
@@ -305,7 +324,7 @@
   })();
 
   G.SocialUI = {
-    init() { G.NickUI.init(); G.FriendsUI.init(); G.LobbyUI.init(); G.InvitePop.init(); },
+    init() { G.NickUI.init(); G.FriendsUI.init(); G.LobbyUI.init(); G.InvitePop.init(); G.LinkUI.init(); },
     withNick, needOnline
   };
 })();

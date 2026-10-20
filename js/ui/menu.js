@@ -10,7 +10,7 @@ G.MenuUI = (() => {
   const SORTS = [['num', 'Nº'], ['name', 'Nombre'], ['rar', 'Rareza'], ['new', 'Recién conseguidos'], ['used', 'Más usados']];
 
   function init() {
-    const ICON = { play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+    const ICON = { play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', link: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
@@ -22,6 +22,7 @@ G.MenuUI = (() => {
         else if (go === 'gacha') G.GachaUI.open();
         else if (go === 'goals') G.GoalsUI.open();
         else if (go === 'friends') G.FriendsUI.open();
+        else if (go === 'link') G.LinkUI.open();
         else if (go === 'rank') G.RankingUI.open();
         else if (go === 'settings') G.SettingsUI.open();
       };
@@ -311,7 +312,9 @@ G.MenuUI = (() => {
           ${G.Moves.poolFor(p).map(id => `<span title="${G.T(G.Moves.BY_ID[id].name, 'move')}">${G.Icons.html('move:' + id, 16)}</span>`).join('')}</p>
         ${usingThis
           ? '<button class="btn grow" disabled style="width:100%">Es tu compañero</button>'
-          : `<button id="dex-pick" class="btn gold" data-sfx="confirm" style="width:100%">Elegir de compañero${viewShiny ? ' (shiny)' : ''}</button>`}
+          : G.Evolution.stageOf(dex) > 1
+            ? `<button class="btn" disabled style="width:100%">${G.Evolution.lockText()}</button>`
+            : `<button id="dex-pick" class="btn gold" data-sfx="confirm" style="width:100%">Elegir de compañero${viewShiny ? ' (shiny)' : ''}</button>`}
       ` : `<p class="center" style="color:var(--muted)">Aún no lo tienes.<br>Consíguelo en el banner de <b class="gold">${GEN_NAMES[p.gen - 1]}</b>
             o derrotándolo cuando salga shiny.</p>`}
     `;

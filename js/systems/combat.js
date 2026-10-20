@@ -34,7 +34,7 @@ G.Combat = (() => {
       m.t = 0.05;
       return;
     }
-    m.t = Math.max(0.05, m.cd * pl.cdMul);
+    m.t = Math.max(0.05, m.cd * pl.cdMul * G.Abilities.cd(pl, m));
     pl.cast(m);
     if (G.Coop.active) G.Coop.cast(pl, m);
     // Vínculo: su icono destella en el HUD al lanzarse (uno que explota pegado al
@@ -729,14 +729,14 @@ G.Combat = (() => {
 
   // Golpe crítico (Mejoras → Golpe Crítico): x1,5 de daño, número naranja y grande.
   const CRIT_MUL = 1.5;
-  const isCrit = pl => !ghost && pl.critChance > 0 && Math.random() < pl.critChance;
+  const isCrit = pl => { const cc = pl.critChance + G.Abilities.crit(pl); return !ghost && cc > 0 && Math.random() < cc; };
 
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
     const k = typeK(m.type, e) * G.Stats.taken(e.mon, m.cat);
     const crit = isCrit(pl);
-    dmg *= k * (crit ? CRIT_MUL : 1);
+    dmg *= k * (crit ? CRIT_MUL + G.Abilities.critdmg(pl) : 1);
     e.hurt(dmg, col, dx, dy, knock, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
-    if (!ghost) pl.onDealt(dmg);
+    if (!ghost) pl.onDealt(dmg, e);
     pl.dmgDealt += dmg;
     m.dealt = (m.dealt || 0) + dmg;               // por ataque, para el resumen de la pausa
     if (m.burn) e.applyBurn(m.burn);
@@ -843,13 +843,13 @@ G.Combat = (() => {
         }
 
         const crit = isCrit(pl);
-        const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? CRIT_MUL : 1);
+        const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? CRIT_MUL + G.Abilities.critdmg(pl) : 1);
         e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock,
                crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
         pl.dmgDealt += p.dmg * k;
         if (p.src) p.src.dealt = (p.src.dealt || 0) + p.dmg * k;
-        pl.onDealt(p.dmg * k);
+        pl.onDealt(p.dmg * k, e);
         if (p.burn) e.applyBurn(p.burn);
         if (p.poison) e.applyPoison(p.poison);
         if (p.slow) e.applySlow(p.slow);
@@ -876,6 +876,7 @@ G.Combat = (() => {
       e.strike(pl);
       pl.hurt(e.dmg, e.atkType, false, e.cat);
       if (pl.hasItem('rockyhelmet')) e.hurt(15 + pl.level * 4, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
+      G.Abilities.contact(pl, e);
       const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
       e.kx += nx * 150; e.ky += ny * 150;
     }

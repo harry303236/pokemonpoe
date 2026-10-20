@@ -190,6 +190,7 @@
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
         <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
+        <button class="menu-item" data-go="link">與朋友連線<small>免帳號，貼連線碼就能一起玩</small></button>
         <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 4</small></button>
         <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
         <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
@@ -356,6 +357,32 @@
   </div>
 </section>
 
+<!-- ====== Con amigos (sin servidor) ====== -->
+<section id="scr-link" class="scr dim hidden">
+  <div class="box wide">
+    <div class="row between"><h2>與朋友連線</h2><button class="btn small ghost" data-back>返回</button></div>
+    <p class="sub">不需要帳號或伺服器：房主與朋友互相交換「連線碼」（用 LINE／Discord 複製貼上即可），電腦就直接接起來，最多 4 人。</p>
+    <label class="lk-lab">你的暱稱 <input id="lk-name" maxlength="16" placeholder="給隊友看的名字"></label>
+    <div class="lk-cols">
+      <div class="lk-col">
+        <h3>我是房主</h3>
+        <p class="sub">建立房間後，到大廳替每位朋友產生邀請碼。</p>
+        <button id="lk-create" class="btn gold">建立房間</button>
+      </div>
+      <div class="lk-col">
+        <h3>我要加入</h3>
+        <p class="sub">貼上房主給你的邀請碼，產生「回覆碼」再傳回給房主。</p>
+        <textarea id="lk-in" class="lk" rows="3" placeholder="貼上邀請碼"></textarea>
+        <button id="lk-join" class="btn">產生回覆碼</button>
+        <textarea id="lk-out" class="lk hidden" rows="3" readonly></textarea>
+        <button id="lk-copy" class="btn small hidden">複製回覆碼</button>
+        <p class="note" id="lk-status"></p>
+      </div>
+    </div>
+    <p class="note">提示：大部分家用網路可以直連；若連不上（公司／學校網路、部分行動網路），請換一個網路或開手機熱點再試。</p>
+  </div>
+</section>
+
 <!-- ====== Amigos ====== -->
 <section id="scr-friends" class="scr dim hidden">
   <div class="box wide">
@@ -378,6 +405,15 @@
       <div class="row"><button id="lobby-menu" class="btn small ghost">Menú</button><button id="lobby-leave" class="btn small ghost">Salir de la sala</button></div></div>
     <p class="sub" id="lobby-sub"></p>
     <div id="lobby-members" class="lobby-members"></div>
+    <div id="lobby-link" class="hidden">
+      <h3 style="margin:14px 0 6px">邀請朋友</h3>
+      <button id="lk-gen" class="btn small gold">產生邀請碼</button>
+      <textarea id="lk-offer" class="lk hidden" rows="3" readonly></textarea>
+      <button id="lk-offer-copy" class="btn small hidden">複製邀請碼</button>
+      <textarea id="lk-answer" class="lk hidden" rows="3" placeholder="貼上朋友傳回來的回覆碼"></textarea>
+      <button id="lk-accept" class="btn small hidden">連線</button>
+      <p class="note" id="lk-msg"></p>
+    </div>
     <h3 id="lobby-inv-title" style="margin:14px 0 6px">Invitar amigos</h3>
     <div id="lobby-invite" class="fr-list"></div>
     <div class="row" style="margin-top:14px">
@@ -529,6 +565,22 @@
   </div>
 </section>
 
+<section id="scr-evolve" class="scr dim hidden">
+  <div class="box center">
+    <h2 id="evolve-title" class="bond-title"></h2>
+    <p id="evolve-sub" class="sub"></p>
+    <div id="evolve-cards" class="cards"></div>
+  </div>
+</section>
+
+<section id="scr-ability" class="scr dim hidden">
+  <div class="box center">
+    <h2 id="ability-title" class="bond-title"></h2>
+    <p id="ability-sub" class="sub"></p>
+    <div id="ability-cards" class="cards"></div>
+  </div>
+</section>
+
 <section id="scr-bond" class="scr dim hidden">
   <div class="box center">
     <h2 class="bond-title">¡Nuevo movimiento!</h2>
@@ -563,6 +615,16 @@
   </div>
 </section>
 
+<section id="scr-loadout" class="scr dim hidden">
+  <div class="box center loadout-box">
+    <h2 id="lo-title"></h2>
+    <p class="sub" id="lo-info"></p>
+    <div id="lo-grid" class="lo-grid"></div>
+    <p class="sub" id="lo-hint"></p>
+    <div class="row" style="justify-content:center"><button id="lo-close" class="btn gold"></button></div>
+  </div>
+</section>
+
 <section id="scr-over" class="scr dim hidden">
   <div class="box center" style="width:min(480px,100%)">
     <h2 id="over-title">Has caído…</h2>
@@ -579,6 +641,9 @@
 <script defer src="js/core/settings.js"></script>
 <script defer src="js/data/music.js"></script>
 <script defer src="js/data/pokedex.js"></script>
+<script defer src="js/data/evolutions.js"></script>
+<script defer src="js/data/abilities.js"></script>
+<script defer src="js/data/ability-fx.js"></script>
 <script defer src="js/data/sprites-meta.js"></script>
 <!-- núcleo -->
 <script defer src="js/core/firebase-config.js"></script>
@@ -614,6 +679,8 @@
 <script defer src="js/systems/stats.js"></script>
 <script defer src="js/systems/combat.js"></script>
 <script defer src="js/systems/spawner.js"></script>
+<script defer src="js/systems/evolution.js"></script>
+<script defer src="js/systems/abilities.js"></script>
 <script defer src="js/systems/levelup.js"></script>
 <script defer src="js/systems/gacha.js"></script>
 <script defer src="js/systems/interact.js"></script>
@@ -629,6 +696,7 @@
 <script defer src="js/net/codec.js"></script>
 <script defer src="js/net/net.js"></script>
 <script defer src="js/net/coop.js"></script>
+<script defer src="js/net/link.js"></script>
 <script defer src="js/net/ranking.js"></script>
 <!-- interfaz -->
 <script defer src="js/ui/icons.js"></script>
@@ -638,6 +706,7 @@
 <script defer src="js/ui/test.js"></script>
 <script defer src="js/ui/menu.js"></script>
 <script defer src="js/ui/slots.js"></script>
+<script defer src="js/ui/loadout-ui.js"></script>
 <script defer src="js/ui/gacha-ui.js"></script>
 <script defer src="js/ui/run-ui.js"></script>
 <script defer src="js/ui/social-ui.js"></script>

@@ -910,3 +910,61 @@ html:lang(zh-Hant) { --font: 'Pixelify', 'PingFang TC', 'Microsoft JhengHei', 'N
 html:lang(zh-Hans) { --font: 'Pixelify', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }
 html:lang(zh) body { line-height: 1.5; -webkit-font-smoothing: antialiased; }
 html:lang(zh) .btn, html:lang(zh) .chip { letter-spacing: 0; }
+
+/* ---- Pantalla de Tab: configurar movimientos y ranuras (PokemonPOE) ---- */
+.loadout-box { width: min(920px, 100%); max-height: calc(100dvh - 24px); overflow-y: auto; }
+#lo-info { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; font-size: 15px; }
+.lo-lvbadge { background: var(--gold); color: #1a2550; font-weight: 700; border-radius: 4px; padding: 2px 10px; }
+.lo-pips { display: inline-flex; gap: 4px; }
+.lo-pip { font-size: 11px; padding: 2px 7px; border-radius: 3px; border: 1.5px solid rgba(255,255,255,.2); color: var(--muted); opacity: .6; }
+.lo-pip.on { border-color: var(--green); color: var(--green); opacity: 1; background: rgba(95,224,138,.12); }
+.lo-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 14px 0; user-select: none; text-align: left; }
+.lo-col { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 6px; border: 2px solid rgba(255,255,255,.14); background: rgba(8,16,44,.55); }
+.lo-col.active { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(255,210,63,.25), 0 0 18px rgba(255,210,63,.25); }
+.lo-col.none { opacity: .85; }
+.lo-head { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.lo-key { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 3px; background: rgba(255,255,255,.14); color: #fff; font-weight: 700; }
+.lo-using { margin-left: auto; color: #1a2550; background: var(--gold); border-radius: 3px; padding: 0 8px; font-size: 11px; font-weight: 700; }
+.lo-cell { position: relative; box-sizing: border-box; border-radius: 4px; width: 100%; font-size: 13px; }
+.lo-cell.filled { background: linear-gradient(160deg, color-mix(in srgb, var(--tc) 38%, #14224d), color-mix(in srgb, var(--tc) 14%, #0e1a40)); border: 2px solid var(--tc); cursor: grab; touch-action: none; transition: transform .1s, box-shadow .1s; }
+.lo-cell.filled:hover { transform: translateY(-1px); box-shadow: 0 0 12px color-mix(in srgb, var(--tc) 70%, transparent); }
+.lo-cell.filled:active { cursor: grabbing; }
+.lo-cell.main { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px 10px; text-align: center; min-height: 128px; justify-content: center; }
+.lo-cell.main .lo-nm { font-size: 16px; font-weight: 700; line-height: 1.15; }
+.lo-meta { display: flex; align-items: center; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.lo-chip { font-size: 11px; padding: 0 7px; border-radius: 3px; background: color-mix(in srgb, var(--tc, #888) 55%, #000); color: #fff; }
+.lo-lv { font-size: 12px; color: var(--gold); font-weight: 700; }
+.lo-socks { position: relative; display: flex; flex-direction: column; gap: 6px; margin-left: 12px; padding-left: 12px; border-left: 3px solid rgba(255,138,216,.45); }
+.lo-sock-label { font-size: 11px; color: #ff8ad8; letter-spacing: .5px; }
+.lo-socks > .lo-cell::before { content: ''; position: absolute; left: -15px; top: 50%; width: 12px; border-top: 3px solid rgba(255,138,216,.45); }
+.lo-cell.lo-sk { display: flex; align-items: center; gap: 8px; padding: 6px 8px; min-height: 52px; }
+.lo-cell.lo-sk .lo-txt { min-width: 0; }
+.lo-cell.lo-sk .lo-nm { font-weight: 700; line-height: 1.1; font-size: 13px; }
+.lo-ico { display: grid; place-items: center; flex: 0 0 auto; }
+.lo-cell.empty { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--muted); border: 2px dashed rgba(255,138,216,.6); background: rgba(255,138,216,.05); }
+.lo-cell.empty.lo-sk { min-height: 52px; }
+.lo-cell.empty.main { flex-direction: column; min-height: 128px; border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.04); }
+.lo-plus { font-size: 20px; line-height: 1; }
+.lo-cell.locked { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 4px 8px; border: 2px dashed rgba(255,255,255,.14); opacity: .5; font-size: 12px; }
+.lo-cell.sel { outline: 3px solid var(--gold); outline-offset: 1px; }
+.lo-cell.ok { outline: 3px dashed var(--green); outline-offset: 1px; background-color: rgba(95,224,138,.2); }
+.lo-ghost { position: fixed; z-index: 9999; pointer-events: none; transform: translate(-50%, -50%); opacity: .92; filter: drop-shadow(0 4px 8px rgba(0,0,0,.65)); }
+@media (max-width: 760px) { .lo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .lo-grid { grid-template-columns: 1fr; } }
+.lo-cell.lo-sk .lo-nm, .lo-cell.empty.lo-sk span, .lo-cell.locked small { writing-mode: horizontal-tb; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; }
+.lo-cell.empty.lo-sk { width: 100%; }
+
+/* Elegir habilidad (PokemonPOE) */
+.card .ds.fx { color: var(--gold); font-size: 13px; margin-top: 4px; }
+#ability-cards .card .ico { flex: 0 0 52px; }
+
+/* ===== Con amigos (sala sin servidor) ===== */
+.lk-lab { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-weight: 600; }
+.lk-lab input { flex: 1; max-width: 260px; padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(244,248,255,.25); background: rgba(0,0,0,.35); color: #fff; font-size: 15px; }
+.lk-cols { display: flex; gap: 16px; flex-wrap: wrap; margin: 6px 0 4px; }
+.lk-col { flex: 1 1 280px; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(244,248,255,.16); background: rgba(255,255,255,.04); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.lk-col h3 { margin: 0; }
+.lk-col .sub { margin: 0; }
+textarea.lk { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 6px; border: 1px solid rgba(244,248,255,.25); background: rgba(0,0,0,.4); color: #cfe3ff; font: 12px/1.35 ui-monospace, Consolas, monospace; resize: none; word-break: break-all; }
+#lobby-link { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+#lobby-link.hidden { display: none; }

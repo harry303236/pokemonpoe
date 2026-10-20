@@ -91,6 +91,7 @@ G.Game = (() => {
     // En grupo la pausa no para el juego (los demás siguen jugando).
     if (G.Coop.active) {
       if (state !== 'playing') return;
+      if (G.UI.isOpen('scr-loadout')) { G.UI.hide('scr-loadout'); return; }
       if (G.UI.isOpen('scr-pause')) G.UI.hide('scr-pause');
       else { G.RunUI.showPause(true); G.Audio.sfx('pause'); }
       return;
@@ -99,14 +100,30 @@ G.Game = (() => {
     else if (state === 'paused') { state = 'playing'; G.UI.hideAll(); }
   }
 
+  /** Tab: abre/cierra la pantalla de configuración de movimientos y ranuras. */
+  function toggleLoadout() {
+    const open = G.UI.isOpen('scr-loadout');
+    if (G.Coop.active) {
+      if (state !== 'playing') return;
+      if (open) G.UI.hide('scr-loadout');
+      else { G.UI.hide('scr-pause'); G.LoadoutUI.open(); G.Audio.sfx('pause'); }
+      return;
+    }
+    if (open) { state = 'playing'; G.UI.hideAll(); }
+    else if (state === 'playing') { state = 'paused'; G.LoadoutUI.open(); G.Audio.sfx('pause'); }
+    else if (state === 'paused' && G.UI.isOpen('scr-pause')) G.LoadoutUI.open();
+  }
+
   // ---------------- run ----------------
 
   /** @param coop  { seed, host, members } para una partida en grupo */
   function startRun(coop = null) {
     holdBy = []; awayBy = null;
     const save = G.DB.save;
-    const mon = G.DEX_BY[save.partner];
-    const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
+    // PokemonPOE: siempre empiezas con la forma inicial de la línea (evolucionas durante la run).
+    const chosen = G.DEX_BY[save.partner];
+    const mon = G.DEX_BY[G.Evolution.baseOf(chosen.dex)];
+    const perks = G.Upgrades.perks(G.DB.upgradesOf(chosen.dex));
 
     G.UI.hideAll();
     G.UI.chrome(false);
@@ -129,14 +146,15 @@ G.Game = (() => {
     runReal = performance.now(); tampered = false;
 
     pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    pl.partnerDex = chosen.dex;     // el que elegiste en el menú (mejoras, atajos, "más usados")
     banked = { t1: 0, t10: 0 };
     caught = [];
     // Atajos: movimientos con hueco fijo (save.pbind[dex] = [id del 1, id del 2, ...]),
     // antes de aprender nada: addMove ya los coloca.
-    (save.pbind && save.pbind[mon.dex] || []).forEach((id, i) => { if (id) pl.bind[id] = i; });
-    pl.addMove(G.startMoveOf(mon.dex));
+    (save.pbind && save.pbind[chosen.dex] || []).forEach((id, i) => { if (id) pl.bind[id] = i; });
+    pl.addMove(G.startMoveOf(chosen.dex));
     // Mejora "Veto": movimientos que no quieres que te salgan.
-    pl.banned = new Set((save.pban && save.pban[mon.dex] || []).slice(0, perks.bans));
+    pl.banned = new Set((save.pban && save.pban[chosen.dex] || []).slice(0, perks.bans));
     // Mejora "Repertorio": un segundo movimiento de ataque al azar.
     if (perks.startMoves >= 2) {
       const pool = G.Moves.poolFor(mon).filter(id => !pl.hasMove(id) && !pl.banned.has(id) && G.Moves.BY_ID[id].kind !== 'buff');
@@ -250,7 +268,7 @@ G.Game = (() => {
       const mine = G.UI.isOpen('scr-bond');
       if (holdBy.length) {
         if (state === 'playing') state = 'held';
-        const others = holdBy.filter(n => n !== (G.Social.me && G.Social.me.name) && n !== 'Tú');
+        const others = holdBy.filter(n => n !== G.Social.myName() && n !== 'Tú');
         if (!mine && others.length) G.Spawner.say('Pausa: ' + others.join(', ') + ' ' + (others.length > 1 ? 'están eligiendo…' : 'está eligiendo…'), 999, true);
         else if (!others.length) G.Spawner.say(awayBy ? awayText() : '', awayBy ? 999 : 0, true);   // sólo tú: sin aviso viejo
       } else {
@@ -307,7 +325,7 @@ G.Game = (() => {
     G.Audio.music(null);
     G.Audio.sfx(dead ? 'gameover' : 'back');
     const save = G.DB.save;
-    const mul = pl.coinMul;
+    const mul = pl.coinMul * G.Abilities.coin(pl);
     const parts = {
       tiempo: Math.floor(time / 5),
       derrotados: Math.floor(pl.kills * 0.25),
@@ -321,7 +339,7 @@ G.Game = (() => {
     bankTickets(false);
     save.stats.runs++;
     save.pused = save.pused || {};
-    save.pused[pl.dex] = (+save.pused[pl.dex] || 0) + 1;     // para "más usados" en la colección
+    save.pused[pl.partnerDex || pl.dex] = (+save.pused[pl.partnerDex || pl.dex] || 0) + 1;     // para "más usados" en la colección
     save.stats.totalKills += pl.kills;
     save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(time));
     if (coop) save.stats.bestGroupTime = Math.max(save.stats.bestGroupTime || 0, Math.floor(time));
@@ -391,6 +409,9 @@ G.Game = (() => {
     }
     // Nunca abras cartas con el Pokémon caído (morir y recoger XP en el mismo frame).
     if (pl.dead) return;
+    // PokemonPOE: la evolución (Nv.8 / Nv.15) va antes que las cartas del nivel.
+    if (startEvolution()) return;
+    if (startAbilityChoice()) return;
     pendingLevels--;
     state = 'levelup';
     G.Audio.sfx('levelup');
@@ -400,6 +421,42 @@ G.Game = (() => {
       state = 'playing';          // antes de aplicar: un movimiento nuevo puede abrir la pantalla de colocación
       card.apply(pl);
     });
+  }
+
+  // ---------------- evolución (PokemonPOE) ----------------
+
+  /** Si toca evolucionar, abre la elección de forma y devuelve true (la partida se para). */
+  function startEvolution() {
+    if (G.Coop.active) return false;          // TODO: sincronizar la evolución en grupo
+    const opts = G.Evolution.due(pl);
+    if (!opts.length) return false;
+    state = 'choice';
+    G.Audio.sfx('levelup');
+    const mine = pl;
+    G.Sprites.preload(opts, 6000, mine.shiny).then(() => {
+      if (pl !== mine || state !== 'choice') return;
+      G.RunUI.showEvolve(mine, opts, dex => {
+        G.Evolution.apply(mine, dex);
+        state = 'playing';
+      });
+    });
+    return true;
+  }
+
+  /** Forma final alcanzada (o Nv.10 si no evoluciona): elegir habilidad. */
+  function startAbilityChoice() {
+    if (G.Coop.active) return false;          // TODO: sincronizar en grupo
+    const opts = G.Abilities.offer(pl);
+    if (!opts.length) return false;
+    state = 'choice';
+    G.Audio.sfx('levelup');
+    const mine = pl;
+    G.RunUI.showAbility(mine, opts, id => {
+      G.Abilities.set(mine, id);
+      G.Spawner.say(G.Abilities.nameOf(id), 3, true);
+      state = 'playing';
+    });
+    return true;
   }
 
   // ---------------- movimientos nuevos: dónde se colocan ----------------
@@ -424,14 +481,9 @@ G.Game = (() => {
     if (!pl) return false;
     const opts = pl.placements();
     if (!opts.length) return false;
-    if (opts.length === 1 || G.Coop.active) return place(id, opts[0]);
-    state = 'choice';
-    G.Audio.sfx('levelup');
-    G.RunUI.showPlace(id, opts, pc => {
-      place(id, pc);
-      if (state === 'choice') state = holdBy.length ? 'held' : 'playing';
-    });
-    return true;
+    // PokemonPOE: sin pantalla de colocación. Hueco principal libre primero; si no,
+    // la primera ranura libre. Luego se reordena a gusto con Tab.
+    return place(id, opts[0]);
   }
 
   // ---------------- recogida ----------------
@@ -455,7 +507,49 @@ G.Game = (() => {
       G.RunUI.showItemChoice(o.cur, o.next, o.take);
       return;
     }
+    if (G.Coop.active && coopChoices()) return;
     if (laterItems.length) offerItem(laterItems.shift());
+  }
+
+  /**
+   * Cooperativo: evolución (Nv.8/15) y habilidad (forma final o Nv.10). Cada uno elige lo
+   * suyo en su pantalla y la partida se para para todos mientras tanto (como con las fusiones).
+   * Al terminar vuelve a mirar (tras evolucionar puede tocar elegir habilidad).
+   */
+  let coopPick = false;
+  function coopChoices() {
+    if (!pl || coopPick) return false;
+    const evo = G.Evolution.due(pl);
+    const abl = evo.length ? [] : G.Abilities.offer(pl);
+    if (!evo.length && !abl.length) return false;
+    coopPick = true;
+    state = 'choice';
+    G.Coop.holdStart();
+    G.Audio.sfx('levelup');
+    const mine = pl;
+    const finish = () => {
+      coopPick = false;
+      if (state === 'choice') state = holdBy.length ? 'held' : 'playing';
+      G.Coop.holdEnd();
+      afterLevelUp();
+    };
+    if (evo.length) {
+      G.Sprites.preload(evo, 6000, mine.shiny).then(() => {
+        if (pl !== mine || !G.Coop.active) { coopPick = false; return; }
+        G.RunUI.showEvolve(mine, evo, dex => {
+          G.Evolution.apply(mine, dex);
+          G.Coop.announceEvolve(dex);
+          finish();
+        });
+      });
+    } else {
+      G.RunUI.showAbility(mine, abl, id => {
+        G.Abilities.set(mine, id);
+        G.Spawner.say(G.Abilities.nameOf(id), 3, true);
+        finish();
+      });
+    }
+    return true;
   }
 
   /** Has cogido un objeto: si no llevas ninguno te lo pones; si no, eliges. */
@@ -561,6 +655,18 @@ G.Game = (() => {
       }
       return;
     }
+    if (G.UI.isOpen('scr-ability')) {
+      for (let i = 0; i < 3; i++) {
+        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) { const c = document.querySelectorAll('#ability-cards .card')[i]; if (c) c.click(); }
+      }
+      return;
+    }
+    if (G.UI.isOpen('scr-evolve')) {
+      for (let i = 0; i < 9; i++) {
+        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) { const c = document.querySelectorAll('#evolve-cards .card')[i]; if (c) c.click(); }
+      }
+      return;
+    }
     if (G.UI.isOpen('scr-item')) {
       for (let i = 0; i < 2; i++) {
         if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) document.querySelectorAll('#item-cards .card')[i].click();
@@ -574,12 +680,13 @@ G.Game = (() => {
       return;
     }
     if (G.Input.tap('escape') || G.Input.tap('keyp')) { togglePause(); return; }
+    if (G.Input.tap('tab')) { toggleLoadout(); return; }
     if (state !== 'playing' || !pl) return;
     for (let i = 0; i < 4; i++) {
       if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.setActive(i);
     }
     if (G.Input.tap('keyq')) pl.cycle(-1);
-    if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
+    if (G.Input.tap('keye')) pl.cycle(1);
   }
 
   // ---------------- bucle ----------------
@@ -669,7 +776,7 @@ G.Game = (() => {
       G.FX.ring(pl.x, pl.y, 10, G.Camera.outerRadius(), '#ffffff', 0.7, 6);
     }
 
-    pl.frozen = coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item'));
+    pl.frozen = coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item') || G.UI.isOpen('scr-loadout'));
     pl.update(dt);
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
@@ -921,7 +1028,7 @@ G.Game = (() => {
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */
     debugSpeed(k) { if (k > 1) tampered = true; speedK = k; },
-    togglePause,
+    togglePause, toggleLoadout,
     /** Abandona la partida en curso (p. ej. al cerrar sesión desde Ajustes). */
     quit() { if (state !== 'ui' && state !== 'over') quitRun(); },
     /** Para grabar vídeos: abre las cartas de subir de nivel. */
@@ -972,8 +1079,16 @@ G.Flow = {
   toLogin() { G.Audio.music('village'); G.LoginUI.open(); },
   afterLogin() {
     G.Audio.music('village');
-    if (!G.DB.save.partner) G.TestUI.start();
-    else this.goMenu();
+    if (!G.DB.save.partner) {
+      // Modo pruebas (devcheat.js): sin test de personalidad, directo al menú con un compañero.
+      if (G.DEV_CHEAT && G.DEX_BY) {
+        const dex = G.DEX_BY[25] ? G.Evolution.baseOf(25) : G.DEX[0].dex, sv = G.DB.save;
+        sv.starter = dex; sv.partner = dex; sv.personality = null;
+        G.DB.grant(dex, 'starter');
+        G.DB.commit();
+        this.goMenu();
+      } else G.TestUI.start();
+    } else this.goMenu();
   },
   goMenu() {
     if (G.Game.state !== 'ui') G.Game.toUI();

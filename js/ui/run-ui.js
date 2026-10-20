@@ -92,7 +92,7 @@ G.RunUI = (() => {
 
   /** Cooperativo: quién falta por elegir. */
   function setWaiting(names) {
-    const me = G.Social.me ? G.Social.me.name : '';
+    const me = G.Social.myName();
     const others = names.filter(n => n !== me);
     const list = a => new Intl.ListFormat(G.I18n.locale, { style: 'long', type: 'conjunction' }).format(a);
     $('lvl-wait').setAttribute('translate', 'no');
@@ -177,6 +177,58 @@ G.RunUI = (() => {
     guard(box);
   }
 
+  // ---------------- habilidad: elegir una ----------------
+
+  function showAbility(pl, ids, cb) {
+    const Z = String((window.PS_LOCALES && window.PS_LOCALES.lang) || 'en').startsWith('zh');
+    const rec = (G.DEX_ABILITIES && G.DEX_ABILITIES[pl.dex]) || {};
+    $('ability-title').textContent = Z ? '選擇特性' : 'Choose an Ability';
+    $('ability-sub').textContent = Z ? `${pl.mon.name} 只能帶一個特性出戰` : `${pl.mon.name} can bring one Ability`;
+    const box = $('ability-cards');
+    box.innerHTML = '';
+    ids.forEach((id, i) => {
+      const t = (G.ABILITY_FX[id] || {}).tier || 1;
+      const el = document.createElement('div');
+      el.className = 'card' + (rec.h === id ? ' evo' : '');
+      const lines = G.Abilities.describe(id).map(l => '• ' + l).join('<br>');
+      el.innerHTML = `<div class="ico" style="background:rgba(255,210,63,.18);color:#ffd23f;font-size:15px;line-height:1.1;text-align:center">${'★'.repeat(t)}</div>
+        <div class="txt"><div class="nm">${G.Abilities.nameOf(id)}${rec.h === id ? ` <span class="tag-chip" style="background:#a56bff">${Z ? '隱藏特性' : 'Hidden'}</span>` : ''}</div>
+        <div class="ds">${G.Abilities.officialOf(id)}</div><div class="ds fx">${lines}</div></div>
+        <div class="key">${i + 1}</div>`;
+      el.dataset.sfx = 'none';
+      el.onclick = () => { if (guarded()) return; G.UI.hide('scr-ability'); cb(id); };
+      box.appendChild(el);
+    });
+    G.UI.show('scr-ability');
+    guard(box);
+  }
+
+  // ---------------- evolución: elegir forma ----------------
+
+  function showEvolve(pl, opts, cb) {
+    const from = pl.mon, E = G.Evolution;
+    $('evolve-title').textContent = E.t('title');
+    $('evolve-sub').textContent = E.t('sub')(from.name);
+    const box = $('evolve-cards');
+    box.innerHTML = '';
+    const d = (a, b) => (a - b >= 0 ? '+' : '') + Math.round(a - b);
+    opts.forEach((dex, i) => {
+      const mon = G.DEX_BY[dex], col = G.U.TYPE_COLOR[mon.types[0]];
+      const el = document.createElement('div');
+      el.className = 'card evo';
+      el.innerHTML = `<div class="ico" style="background:${col}33;flex:0 0 64px;height:64px"></div>
+        <div class="txt"><div class="nm">${mon.name} ${G.UI.typeChips(mon.types)}</div>
+        <div class="ds">${E.t('hp')} ${d(mon.hp, from.hp)} · ${E.t('spd')} ${d(mon.spd, from.spd)} · ${E.t('atk')} ${d(mon.atk * 100, from.atk * 100)}%</div></div>
+        <div class="key">${i + 1}</div>`;
+      el.querySelector('.ico').appendChild(G.UI.spriteCanvas(dex, 56, 56, { scale: 1, lively: true, shiny: pl.shiny }));
+      el.dataset.sfx = 'none';
+      el.onclick = () => { if (guarded()) return; G.UI.hide('scr-evolve'); cb(dex); };
+      box.appendChild(el);
+    });
+    G.UI.show('scr-evolve');
+    guard(box);
+  }
+
   // ---------------- movimiento nuevo: dónde se coloca ----------------
 
   let place = null;         // { opts, cb }
@@ -224,50 +276,14 @@ G.RunUI = (() => {
 
   const mname = m => G.T(m.name, 'move');
 
-  /** Lista de grupos con botones para sacar / mover / ascender los insertados y para insertar los sueltos. */
+  /** En la pausa sólo queda un acceso a la pantalla de Tab (arrastrar y soltar). */
   function socketsHtml(pl) {
-    const cap = pl.socketCap();
-    let h = `<h3>${G.T('Ranuras')} <small>${cap}/${Player_MAX()} ${G.T('por movimiento')}</small></h3>`;
-    if (cap === 0) return h + `<p class="sub">${G.T('Al nivel 5 tendrás la primera ranura (y una más cada 5 niveles, hasta el 20).')}</p>`;
-    pl.slots.forEach((g, gi) => {
-      const free = pl.freeSockets(g);
-      h += `<div class="sock-group"><div class="sock-main"><kbd>${gi + 1}</kbd> ${G.Icons.html('move:' + g[0].id, 20)} <b>${mname(g[0])}</b>`;
-      for (let k = 1; k <= cap; k++) h += g[k] ? ` <span class="sock on">${G.Icons.html('move:' + g[k].id, 14)}</span>` : ' <span class="sock"></span>';
-      h += '</div>';
-      for (let k = 1; k < g.length; k++) {
-        const m = g[k];
-        h += `<div class="sock-row">${G.Icons.html('move:' + m.id, 16)} ${mname(m)} <small>Nv.${m.lvl}</small>
-          <span class="sock-btns"><button class="btn small" data-act="promote" data-m="${m.id}">${G.T('Hacer principal')}</button>`;
-        if (pl.slots.length < pl.maxMoves) h += `<button class="btn small" data-act="eject" data-m="${m.id}">${G.T('Sacar')}</button>`;
-        for (const o of pl.slots) if (o !== g && pl.freeSockets(o) > 0) h += `<button class="btn small" data-act="transfer" data-m="${m.id}" data-to="${o[0].id}">→ ${mname(o[0])}</button>`;
-        h += '</span></div>';
-      }
-      if (g.length === 1) {
-        const targets = pl.slots.filter(o => o !== g && pl.freeSockets(o) > 0);
-        if (targets.length) h += `<div class="sock-row"><span class="sub">${G.T('Insertar en')}:</span><span class="sock-btns">${targets.map(o => `<button class="btn small" data-act="insert" data-m="${g[0].id}" data-to="${o[0].id}">${mname(o[0])}</button>`).join('')}</span></div>`;
-      }
-      h += '</div>';
-    });
-    return h;
+    return `<button class="btn gold" data-act="loadout">${G.LoadoutUI.t('open')}</button>`;
   }
-  const Player_MAX = () => G.Player ? G.Player.SOCKET_MAX : 4;
 
   function wireSockets() {
-    const box = $('pause-sockets');
-    box.onclick = e => {
-      const b = e.target.closest('button[data-act]');
-      const pl = G.Game.player;
-      if (!b || !pl) return;
-      const m = pl.moves.find(x => x.id === b.dataset.m);
-      const to = b.dataset.to && pl.slots.find(g => g[0].id === b.dataset.to);
-      const act = b.dataset.act;
-      let ok = false;
-      if (act === 'promote') ok = pl.promote(m);
-      else if (act === 'eject') ok = pl.eject(m);
-      else if (act === 'transfer') ok = pl.transfer(m, to);
-      else if (act === 'insert') ok = pl.insert(m, to);
-      G.Audio.sfx(ok ? 'confirm' : 'back');
-      refreshPause();
+    $('pause-sockets').onclick = e => {
+      if (e.target.closest('button[data-act="loadout"]')) G.LoadoutUI.open();
     };
   }
 
@@ -299,6 +315,7 @@ G.RunUI = (() => {
     const guard = v => (v >= 0 ? '−' : '+') + Math.round(Math.abs(v) * 100) + ' %';
     const st = [
       ['Vida', n(pl.hp) + ' / ' + n(pl.maxHp)],
+      [String((window.PS_LOCALES && window.PS_LOCALES.lang) || '').startsWith('zh') ? '特性' : 'Ability', pl.ability ? G.Abilities.nameOf(pl.ability.id) : '—'],
       ['Ataque', k2(pl.atkFor({ cat: 'physical' }))],
       ['At. Esp.', k2(pl.atkFor({ cat: 'special' }))],
       ['Defensa', mon.df + ' <small>' + guard(fis) + ' físico</small>'],
@@ -336,5 +353,5 @@ G.RunUI = (() => {
     $('btn-quit').onclick = onQuit;
   }
 
-  return { showLevelUp, reroll, showItemChoice, showPlace, pickPlace, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
+  return { showLevelUp, reroll, showItemChoice, showEvolve, showAbility, showPlace, pickPlace, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
 })();

@@ -10,6 +10,7 @@ G.Player = class Player {
    */
   constructor(mon, perks = {}, shiny = false) {
     this.mon = mon;
+    this.ability = null;       // PokemonPOE: habilidad elegida (js/systems/abilities.js)
     this.dex = mon.dex;
     this.shiny = shiny && G.Sprites.hasShiny(mon.dex);
     // Los grandes, algo más pequeños y con el choque de uno normal (ver sprites.js).
@@ -97,19 +98,19 @@ G.Player = class Player {
    */
   atkFor(m) {
     const cat = m && m.cat, b = cat === 'physical' ? this.buffs.patk : cat === 'special' ? this.buffs.satk : null;
-    return this.atk * G.Stats.fit(this.mon, cat) * (b ? 1 + b.n * b.amount : 1) * (m && this.monoType(m.type) ? Player.MONO_K : 1);
+    return this.atk * G.Stats.fit(this.mon, cat) * (b ? 1 + b.n * b.amount : 1) * (m && this.monoType(m.type) ? Player.MONO_K : 1) * G.Abilities.atk(this, m);
   }
   /** Monotipo (19-10-2026): los de un solo tipo pegan un +20 % con los ataques de su tipo (tienen menos variedad). */
   static get MONO_K() { return 1.2; }
   monoType(type) { return this.mon.types.length === 1 && type === this.mon.types[0]; }
   get spd() {
-    const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (this.slowT > 0 ? 0.5 : 1);
-    const w = G.Weather.speedFor(this.mon.types);
+    const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (this.slowT > 0 ? 0.5 : 1) * G.Abilities.spd(this);
+    const w0 = G.Weather.speedFor(this.mon.types), w = G.Abilities.noWeather(this) ? Math.max(1, w0) : w0;
     const slow = this.inLiquid ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
     return G.Judgment && G.Judgment.active ? G.Judgment.capSpd(s * slow * w) : s * slow * w;
   }
-  get reduction() { return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount); }
-  get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount; }
+  get reduction() { return Math.min(0.8, Math.max(-0.3, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount + G.Abilities.def(this))); }
+  get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount + Math.max(0, G.Abilities.regen(this)); }
 
   // ---------------- movimientos ----------------
   addMove(id) {
@@ -148,6 +149,29 @@ G.Player = class Player {
     for (const g of this.slots) if (!out.includes(g)) out[out.indexOf(null)] = g;
     this.slots = out;
     if (cur) this.active = out.indexOf(cur);
+  }
+
+  /**
+   * Evoluciona (PokemonPOE): cambia de especie conservando nivel, movimientos y ranuras.
+   * La vida máxima, la velocidad y el ataque base suben (o bajan) lo que difiera la nueva
+   * especie, así se respetan las cartas y mejoras ya cogidas.
+   */
+  evolveTo(mon) {
+    const old = this.mon;
+    this.mon = mon;
+    this.dex = mon.dex;
+    this.shiny = this.shiny && G.Sprites.hasShiny(mon.dex);
+    this.scale = G.Sprites.playerScale(mon.dex);
+    this.anim = new G.Sprites.Animator(mon.dex, this.scale, this.shiny);
+    this.r = G.Sprites.playerRadius(mon.dex);
+    this.bodyH = G.Sprites.bodyHeight(mon.dex, this.scale);
+    const dHp = mon.hp - old.hp;
+    this.maxHp += dHp;
+    this.hp = Math.min(this.maxHp, Math.max(1, this.hp + Math.max(0, dHp)));
+    this.baseSpd += mon.spd - old.spd;
+    this.baseAtk += mon.atk - old.atk;
+    this.evolved = (this.evolved || 0) + 1;
+    this.invuln = Math.max(this.invuln, 1.2);
   }
 
   hasMove(id) { return this.moves.some(m => m.id === id); }
@@ -251,6 +275,46 @@ G.Player = class Player {
     return true;
   }
 
+  /**
+   * Arrastrar y soltar (pantalla de Tab). Coloca el movimiento `m` sobre:
+   *   { move: t }       otro movimiento (principal o insertado): se cambian de sitio
+   *                     (dos principales cambian de hueco con todas sus ranuras)
+   *   { group: g }      una ranura libre del grupo g
+   *   { newSlot: true } un hueco principal vacío (saca a `m` de su ranura)
+   * Con dry = true sólo comprueba si se puede, sin tocar nada.
+   */
+  dropMove(m, to, dry = false) {
+    const gm = this.groupOf(m);
+    if (!gm || !to) return false;
+    if (to.move) {
+      const t = to.move, gt = this.groupOf(t);
+      if (!gt || t === m) return false;
+      if (dry) return true;
+      if (gm[0] === m && gt[0] === t) {
+        const cur = this.slots[this.active];
+        const i = this.slots.indexOf(gm), j = this.slots.indexOf(gt);
+        this.slots[i] = gt; this.slots[j] = gm;
+        this.active = Math.max(0, this.slots.indexOf(cur));
+      } else {
+        gm[gm.indexOf(m)] = t;
+        gt[gt.indexOf(t)] = m;
+      }
+      G.Projectiles.clearOrbs(this);
+      return true;
+    }
+    if (to.group) {
+      const g = to.group;
+      if (!this.slots.includes(g) || g === gm || this.freeSockets(g) <= 0) return false;
+      if (gm[0] === m) { if (gm.length !== 1) return false; return dry ? true : this.insert(m, g); }
+      return dry ? true : this.transfer(m, g);
+    }
+    if (to.newSlot) {
+      if (gm[0] === m || this.slots.length >= this.maxMoves) return false;
+      return dry ? true : this.eject(m);
+    }
+    return false;
+  }
+
   /** Un movimiento insertado pasa a ser el principal de su grupo (y el principal, a la ranura). */
   promote(m) {
     const g = this.groupOf(m);
@@ -288,7 +352,7 @@ G.Player = class Player {
     if (this.anim.busy() && this.anim.progress() < 0.65) return;
     const meta = G.Sprites.animMeta(this.dex, anim);
     const len = meta ? meta.d.reduce((a, b) => a + b, 0) / 60 : 0.4;
-    const cd = Math.max(0.12, m.cd * this.cdMul);
+    const cd = Math.max(0.12, m.cd * this.cdMul * G.Abilities.cd(this, m));
     this.anim.play(anim, { speed: Math.max(1, len / (cd * 0.9)) });
     this.attackFace = 0.35;
   }
@@ -301,12 +365,14 @@ G.Player = class Player {
   /** @param cat  'physical' | 'special': con qué defensa tuya se para (la del enemigo que pega). */
   hurt(amount, type = null, pure = false, cat = null) {
     if (this.invuln > 0 || this.dead) return;
+    amount = G.Abilities.incoming(this, amount, type, cat, pure);     // PokemonPOE: habilidad (esquiva, inmunidad, resistencias...)
+    if (!(amount > 0)) return;
     if (!pure) amount *= G.Stats.taken(this.mon, cat);
     let eff = null;
     if (type) {
       const k = G.Types.mult(type, this.mon.types);
       eff = G.Types.label(k);
-      amount *= k * G.Weather.mult(type);
+      amount *= k * (G.Abilities.noWeather(this) ? 1 : G.Weather.mult(type));
     }
     // Con un ataque cuerpo a cuerpo activo se recibe un 25 % menos: hay que
     // estar encima de los enemigos para pegar (iban muy por detrás).
@@ -320,6 +386,7 @@ G.Player = class Player {
     if (!this.remote) G.Pad.rumble(0.25 + Math.min(0.75, d / this.maxHp * 3), 140);
     G.FX.dmgText(this.x, this.y - this.bodyH - 4, '-' + Math.round(d), eff === 'super' ? '#ff3048' : eff === 'weak' ? '#c9a0a8' : '#ff6b7a', eff === 'super');
     G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#ff5f6d', 6, 90);
+    G.Abilities.afterHurt(this, d, type);
     // Banda Focus: aguanta el golpe con 1 de vida (una vez cada 60 s).
     if (this.hp <= 0 && this.hasItem('focussash') && performance.now() - this.sashT > 60000) {
       this.sashT = performance.now();
@@ -327,6 +394,7 @@ G.Player = class Player {
       G.FX.dmgText(this.x, this.y - this.bodyH - 16, '¡Banda Focus!', '#ff9a3d', true);
       G.FX.ring(this.x, this.y, 6, 70, '#ff9a3d', 0.5, 4);
     }
+    if (this.hp <= 0) G.Abilities.sturdy(this);
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;
       this.anim.play('Faint', { hold: true });
@@ -346,7 +414,7 @@ G.Player = class Player {
 
   /** Devuelve cuántos niveles ha subido (pueden ser varios de golpe). */
   gainXp(amount) {
-    this.xp += amount * this.xpMul;
+    this.xp += amount * this.xpMul * G.Abilities.xp(this) * (G.DEV_XP || 1);   // G.DEV_XP: sólo pruebas (devcheat.js)
     let leveled = 0;
     while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
@@ -368,7 +436,8 @@ G.Player = class Player {
   }
 
   /** Cascabel Concha: un poco de vida por el daño que haces (tope 4/s). */
-  onDealt(dmg) {
+  onDealt(dmg, e) {
+    if (e) G.Abilities.dealt(this, e, dmg);
     if (this.item === 'shellbell') this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04);
   }
 
@@ -403,6 +472,7 @@ G.Player = class Player {
     if (this.bellHeal > 0) { const h = Math.min(this.bellHeal, 4 * dt); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
     if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
     if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
+    G.Abilities.tick(this, dt);
 
     // --- movimiento con colisiones ---
     // (En cooperativo la pausa no para el juego: sólo te quedas quieto.)
@@ -426,7 +496,7 @@ G.Player = class Player {
         this.lavaTick -= dt;
         if (this.lavaTick <= 0) {
           this.lavaTick = le.every; this.invuln = 0;
-          this.hurt(Math.max(le.flat, this.maxHp * le.dmg * 0.5));
+          if (!G.Abilities.noEnv(this)) this.hurt(Math.max(le.flat, this.maxHp * le.dmg * 0.5));
           G.FX.burst(this.x, this.y - 4, le.color, 5, 70);
         }
       } else if (this.walking && Math.random() < dt * 8) {

@@ -46,7 +46,7 @@ G.HUD = (() => {
     ctx.font = F(800, 13);
     ctx.fillStyle = '#eaf2ff';
     ctx.textAlign = 'left';
-    ctx.fillText(pl.mon.name, px, py + 10);
+    ctx.fillText(pl.mon.name + (pl.ability ? ' · ' + G.Abilities.nameOf(pl.ability.id) : ''), px, py + 10);
 
     ctx.font = F(700, 11);
     ctx.fillStyle = '#ffcb3d';
@@ -258,7 +258,7 @@ G.HUD = (() => {
       sy = G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6);
     }
     const BOND = '#ff8ad8';              // color de las ranuras
-    const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul), 0, 1);
+    const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul * G.Abilities.cd(pl, m)), 0, 1);
 
     for (let i = 0; i < n; i++) {
       const g = pl.slots[i] || [];

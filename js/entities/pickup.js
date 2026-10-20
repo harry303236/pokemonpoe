@@ -128,7 +128,7 @@ G.Pickups = (() => {
       }
       if (!pl) continue;
       const dx = pl.x - p.x, dy = pl.y - p.y;
-      const mag2 = pl.magnet * pl.magnet;
+      const mg = pl.magnet * G.Abilities.magnet(pl), mag2 = mg * mg;
 
       if (p.pulled || d2 < mag2) {
         p.pulled = true;

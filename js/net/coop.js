@@ -75,7 +75,7 @@ G.Coop = (() => {
     cfg.members.forEach((m, i) => {
       const x = (i - (cfg.members.length - 1) / 2) * 34, y = 0;
       if (m.uid === me) { pl.x = x; pl.y = y; pl.uid = me; pl.coopHost = host; pl.tagColor = COLORS[i]; return; }
-      const mon = G.DEX_BY[m.dex] || G.DEX_BY[25];
+      const mon = G.DEX_BY[G.Evolution.baseOf(m.dex)] || G.DEX_BY[m.dex] || G.DEX_BY[25];   // se parte de la forma inicial; la evolución llega por 'evo'
       const p = new G.Player(mon, {}, !!m.shiny);
       p.remote = true; p.uid = m.uid; p.tag = m.name; p.tagColor = COLORS[i]; p.revLabel = 'Quédate a su lado';
       p.x = x; p.y = y;
@@ -278,6 +278,7 @@ G.Coop = (() => {
           G.World.breakAt(ev[1], ev[2]);
           emit(['pb', ev[1], ev[2]], from);
           break;
+        case 'evo': mateEvolved(m, ev[1]); emit(['evo', from, ev[1]], from); break;
         case 'lp': picked(from); break;
         case 'hs': holdOn(from); break;
         case 'he': holdOff(from); break;
@@ -368,6 +369,7 @@ G.Coop = (() => {
       case 'say': G.Spawner.say(ev[1], ev[2]); break;
       case 'heal': if (!local.dead) { local.heal(local.maxHp * ev[1]); G.FX.ring(local.x, local.y, 6, 60, '#5fe08a', 0.4, 3); } break;
       case 'lu': if (!ev[2] || ev[2] > seenSeq) { seenSeq = ev[2] || seenSeq; api.levelStart(ev[1]); } break;
+      case 'evo': mateEvolved(mates.get(ev[1]), ev[2]); break;
       case 'lw': api.waiting(ev[1]); break;
       case 'lr': api.resume(); break;
       case 'hp': lastHo = (ev[1] || []).join('|'); api.hold && api.hold(ev[1]); break;
@@ -437,7 +439,26 @@ G.Coop = (() => {
     sendWaiting();
   }
 
-  function nameOf(u) { return u === me ? (G.Social.me ? G.Social.me.name : 'Tú') : (mates.get(u) || {}).name || '?'; }
+  function nameOf(u) { return u === me ? (G.Social.myName() || 'Tú') : (mates.get(u) || {}).name || '?'; }
+
+  // ---------------- evolución de un jugador (PokemonPOE) ----------------
+
+  function mateEvolved(m, dex) {
+    const mon = G.DEX_BY[dex];
+    if (!mon || !m || !m.pl) return;
+    G.Sprites.preload([dex], 8000, m.pl.shiny).then(() => {
+      if (!active || mates.get(m.uid) !== m) return;
+      m.pl.evolveTo(mon);
+      G.FX.ring(m.pl.x, m.pl.y - G.LIFT * 0.5, 10, m.pl.r * 5, G.U.TYPE_COLOR[mon.types[0]], 0.8, 6);
+    });
+  }
+
+  /** Tú has evolucionado: los demás cambian tu aspecto. */
+  function announceEvolve(dex) {
+    if (!active) return;
+    if (host) emit(['evo', me, dex]);
+    else { outEv.push(['evo', dex]); flushClient(true); }
+  }
 
   function sendWaiting() {
     const names = [...waiting].map(nameOf);
@@ -494,7 +515,7 @@ G.Coop = (() => {
   return {
     ANIMS, COLORS, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
-    propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
+    propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd, announceEvolve,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },

@@ -294,6 +294,15 @@ G.Social = (() => {
 
   // ---------------- salas ----------------
 
+  // ---- Sala local (sin nube): la crea js/net/link.js ----
+  let localMe = null;
+  function localIdentity(id, name) { localMe = { uid: id, name }; if (!fb) uid = id; }
+  function localSetRoom(r, what) {
+    room = r ? Object.assign({ id: 'local', local: true, open: true }, r) : null;
+    emit(what || 'room');
+  }
+  const myName = () => (me ? me.name : localMe ? localMe.name : '');
+
   function memberInfo() {
     const s = G.DB.save;
     return { name: me.name, dex: s.partner, shiny: !!s.partnerShiny && G.DB.ownsShiny(s.partner), at: ts() };
@@ -385,6 +394,7 @@ G.Social = (() => {
 
   async function leaveRoom() {
     if (!room) return;
+    if (room.local) { room = null; emit('room'); return; }
     const r = room;
     detachRoom();
     room = null;
@@ -399,11 +409,13 @@ G.Social = (() => {
 
   /** El anfitrión cierra la sala a nuevos jugadores al empezar la partida. */
   function setOpen(open) {
+    if (room && room.local) { room.open = !!open; return; }
     if (room && room.isHost) fb.rtdb.ref('rooms/' + room.id + '/open').set(!!open).catch(() => {});
   }
 
   /** Actualiza tu Pokémon en la sala (si cambias de compañero). */
   function refreshMember() {
+    if (room && room.local) return;
     if (room && me) fb.rtdb.ref('rooms/' + room.id + '/m/' + uid).update(
       { dex: G.DB.save.partner, shiny: !!G.DB.save.partnerShiny && G.DB.ownsShiny(G.DB.save.partner) }).catch(() => {});
   }
@@ -534,6 +546,7 @@ G.Social = (() => {
   return {
     start, stop, claimNick, request, accept, remove, publishProfile, getProfile, profileData,
     createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setPlaying, refreshPresence,
+    localIdentity, localSetRoom, myName,
     invite, acceptInvite, declineInvite,
     on(fn) { listeners.add(fn); }, off(fn) { listeners.delete(fn); },
     get me() { return me; },
