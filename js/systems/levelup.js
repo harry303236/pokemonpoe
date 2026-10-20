@@ -58,7 +58,7 @@ G.LevelUp = (() => {
       const pool = G.Moves.poolFor(pl.mon).concat(sup >= 2 ? [] : G.Moves.SUPPORT).filter(id =>
         !pl.hasMove(id) && !(pl.banned && pl.banned.has(id)) && !(buffs >= 2 && G.Moves.BY_ID[id].kind === 'buff'));
       // Los de su lado bueno (y los empatados y mejoras) salen el doble.
-      const weight = id => { const d = G.Moves.BY_ID[id]; return d.support ? 0.6 : G.Stats.fit(pl.mon, d.cat) >= 0.999 ? 2 : 1; };
+      const weight = id => { const d = G.Moves.BY_ID[id]; return d.support ? (G.DEV_SUPPORT ? 8 : 0.6) : G.Stats.fit(pl.mon, d.cat) >= 0.999 ? 2 : 1; };
       for (const id of pickWeighted(pool, 6, weight)) {
         const d = G.Moves.BY_ID[id];
         out.push({
